@@ -29,3 +29,11 @@ def to_cuda_if_needed(modules, device_type):
         for module in modules:
             module.cuda()
 
+
+def determine_device(force_cpu=False):
+    if not force_cpu and torch.cuda.is_available():
+        return 'cuda'
+    else:
+        return 'cpu'
+
+

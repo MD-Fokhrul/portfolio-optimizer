@@ -1,10 +1,6 @@
-from comet_ml import Experiment
-import argparse
-from dataset.dataset_loader import DatasetLoader
-from model.agent import DDPG
-from env.portfolio_env import PortfolioEnv
-import utils
+import util
 
+import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_name', type=str, default='sp500', help='dataset name')
 parser.add_argument('--data_dir', type=str, default='data', help='data directory')
@@ -16,9 +12,9 @@ parser.add_argument('--discount_factor', type=float, default=0.9, help='ddpg dis
 parser.add_argument('--minibatch_size', type=int, default=8, help='ddpg minibatch size')
 parser.add_argument('--num_warmup_iterations', type=int, default=10, help='number of ddpg steps to warm up with a random action')
 parser.add_argument('--random_process_theta', type=float, default=0.5, help='Random process theta')
-parser.add_argument('--log_interval', type=float, default=20, help='interval to print and log to comet')
-parser.add_argument('--log_comet', type=utils.str2bool, nargs='?', const=True, default=False, help='output directory')
-
+parser.add_argument('--log_interval', type=float, default=20, help='steps interval for print and comet logging')
+parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
+parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, default=False, help='should force cpu even if cuda is available')
 args = parser.parse_args()
 
 log_comet = args.log_comet
@@ -35,6 +31,21 @@ dataset_name = args.dataset_name
 random_process_args = {
     'theta': args.random_process_theta
 }
+force_cpu = args.force_cpu
+
+if log_comet:
+    from comet_ml import Experiment
+    config = util.load_config()
+    experiment = Experiment(api_key=config['comet']['api_key'],
+                            project_name=config['comet']['project_name'],
+                            workspace=config['comet']['workspace'])
+
+from dataset.dataset_loader import DatasetLoader
+from model.agent import DDPG
+from env.portfolio_env import PortfolioEnv
+from model.util import determine_device
+
+device_type = determine_device(force_cpu=force_cpu)
 
 log_interval_steps = args.log_interval
 dataloader = DatasetLoader(data_dir, dataset_name)
@@ -58,14 +69,12 @@ params = {
 }
 
 if log_comet:
-    config = utils.load_config()
-    experiment = Experiment(api_key=config['comet']['api_key'],
-                            project_name=config['comet']['project_name'],
-                            workspace=config['comet']['workspace'])
     experiment.log_parameters(params)
 
 env = PortfolioEnv(data, init_cash)
-agent = DDPG(num_stocks, num_stocks, minibatch_size, random_process_args, learning_rate=learning_rate, discount_factor=discount_factor)
+agent = DDPG(num_stocks, num_stocks, minibatch_size, random_process_args,
+             learning_rate=learning_rate, discount_factor=discount_factor,
+             device_type=device_type)
 
 total_iterations_counter = 0
 for episode in range(num_episodes):
