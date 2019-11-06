@@ -118,7 +118,7 @@ for episode in range(num_episodes):
             print('Episode: %d | step: %d | reward: %2f' % (episode, t, avg_reward))
             env.render()
             if log_comet:
-                experiment.log_metric('avg_step_interval_reward', current_reward, step=total_iterations_counter)
+                experiment.log_metric('avg_step_interval_reward', avg_reward, step=total_iterations_counter)
                 purchase_power = env.portfolio.purchase_power()
                 experiment.log_metric('purchase_power', purchase_power, step=total_iterations_counter)
                 experiment.log_metric('profit', purchase_power - init_cash, step=total_iterations_counter)
