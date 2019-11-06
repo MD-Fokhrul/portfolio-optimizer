@@ -20,6 +20,7 @@ parser.add_argument('--warmup_iters', type=int, default=10, help='number of ddpg
 parser.add_argument('--random_process_theta', type=float, default=0.5, help='Random process theta')
 parser.add_argument('--log_interval', type=int, default=20, help='steps interval for print and comet logging')
 parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
+parser.add_argument('--comet_tags', nargs='+', default=[], help='tags for comet logging')
 parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, default=False, help='should force cpu even if cuda is available')
 args = parser.parse_args()
 # END CLI ARG PARSE #
@@ -42,6 +43,7 @@ force_cpu = args.force_cpu
 limit_iterations = args.limit_iters
 limit_days = args.limit_days
 log_interval_steps = args.log_interval
+comet_tags = args.comet_tags
 # END SET VARS #
 
 # OPTIONAL COMET DATA LOGGING SETUP #
@@ -97,6 +99,7 @@ print('Running with params: %s' % str(params))
 if log_comet:
     experiment.log_parameters(params)
     experiment.log_image('stocks_plot.png', 'stocks')
+    experiment.add_tags(comet_tags)
 
 # init custom OpenAI gym env for stocks portfolio
 env = PortfolioEnv(data, init_cash)
