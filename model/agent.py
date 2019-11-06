@@ -47,7 +47,7 @@ class DDPG():
 
         self.critic.zero_grad()
         q_minibatch = self.critic((states_minibatch, actions_minibatch))
-        value_loss = self.critic_criterion(target_q_minibatch, q_minibatch)  # does the order matter? paper says (targetq - q), other ddpg imps say loss(q, targetq)
+        value_loss = self.critic_criterion(q_minibatch, target_q_minibatch)
         critic_loss_val = value_loss.item()
         value_loss.backward()
         self.critic_optim.step()

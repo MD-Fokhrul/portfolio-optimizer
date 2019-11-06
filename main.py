@@ -70,7 +70,8 @@ params = {
     'data_shape': data.shape,
     'num_days': num_days,
     'num_stocks': num_stocks,
-    'dataset_name': dataset_name
+    'dataset_name': dataset_name,
+    'device_type': device_type
 }
 
 print('Running with params: %s' % str(params))
@@ -145,6 +146,7 @@ for episode in range(num_episodes):
         experiment.log_metric('avg_episode_critic_loss', avg_critic_loss, step=episode)
         experiment.log_metric('avg_episode_actor_loss', avg_actor_loss, step=episode)
         experiment.log_metric('max_episode_purchase_power', env.max_purchase_power, step=episode)
+
     env.render()
 
 if log_comet:
