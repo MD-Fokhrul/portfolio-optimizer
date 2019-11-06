@@ -7,7 +7,7 @@ parser.add_argument('--data_dir', type=str, default='data', help='data directory
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 parser.add_argument('--init_cash', type=int, default=10000, help='initial cash')
 parser.add_argument('--episodes', type=int, default=20, help='number of training episodes')
-parser.add_argument('--limit_episode_steps', type=int, help='limit steps per episode')
+parser.add_argument('--limit_days', type=int, help='limit days (steps per episode)')
 parser.add_argument('--limit_iters', type=int, help='limit total iterations - for debugging')
 parser.add_argument('--num_sample_stocks', type=int, help='number of stocks to sample')
 parser.add_argument('--discount_factor', type=float, default=0.9, help='ddpg discount factor')
@@ -35,7 +35,7 @@ random_process_args = {
 }
 force_cpu = args.force_cpu
 limit_iterations = args.limit_iters
-limit_episode_steps = args.limit_episode_steps
+limit_days = args.limit_days
 
 if log_comet:
     from comet_ml import Experiment
@@ -53,7 +53,7 @@ device_type = determine_device(force_cpu=force_cpu)
 
 log_interval_steps = args.log_interval
 dataloader = DatasetLoader(data_dir, dataset_name)
-data = dataloader.get_data(num_cols_sample=num_sample_stocks, limit_days=limit_episode_steps)
+data = dataloader.get_data(num_cols_sample=num_sample_stocks, limit_days=limit_days)
 num_days = data.shape[0]
 num_stocks = data.shape[1]
 
