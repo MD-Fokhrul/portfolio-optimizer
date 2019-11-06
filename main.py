@@ -7,6 +7,8 @@ parser.add_argument('--data_dir', type=str, default='data', help='data directory
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 parser.add_argument('--init_cash', type=int, default=10000, help='initial cash')
 parser.add_argument('--episodes', type=int, default=20, help='number of training episodes')
+parser.add_argument('--limit_episode_steps', type=int, help='limit steps per episode')
+parser.add_argument('--limit_iters', type=int, help='limit total iterations - for debugging')
 parser.add_argument('--num_sample_stocks', type=int, help='number of stocks to sample')
 parser.add_argument('--discount_factor', type=float, default=0.9, help='ddpg discount factor')
 parser.add_argument('--minibatch_size', type=int, default=8, help='ddpg minibatch size')
@@ -32,6 +34,8 @@ random_process_args = {
     'theta': args.random_process_theta
 }
 force_cpu = args.force_cpu
+limit_iterations = args.limit_iters
+limit_episode_steps = args.limit_episode_steps
 
 if log_comet:
     from comet_ml import Experiment
@@ -48,7 +52,7 @@ from model.util import determine_device
 device_type = determine_device(force_cpu=force_cpu)
 
 log_interval_steps = args.log_interval
-dataloader = DatasetLoader(data_dir, dataset_name)
+dataloader = DatasetLoader(data_dir, dataset_name, limit_episode_steps=limit_episode_steps)
 data = dataloader.get_data(num_cols_sample=num_sample_stocks)
 num_days = data.shape[0]
 num_stocks = data.shape[1]
@@ -68,6 +72,8 @@ params = {
     'dataset_name': dataset_name
 }
 
+print('Running with params: %s' % str(params))
+
 if log_comet:
     experiment.log_parameters(params)
 
@@ -82,6 +88,9 @@ for episode in range(num_episodes):
     current_state = env.reset()  # get initial state s(t)
     rewards = []
     for t in range(num_days - 1):
+        if limit_iterations is not None and total_iterations_counter >= limit_iterations:
+            break
+
         if total_iterations_counter < num_warmup_iterations:
             # warmup to fill up the buffer with random actions
             current_action = agent.select_random_action()
@@ -111,7 +120,10 @@ for episode in range(num_episodes):
         current_state = next_state
         total_iterations_counter += 1
 
-    print('Episode: %d final results:')
+    if limit_iterations is not None and total_iterations_counter >= limit_iterations:
+        break
+
+    print('Episode: %d final results:' % episode)
     if log_comet:
         avg_episode_reward = sum(rewards) / len(rewards)
         experiment.log_metric('avg_episode_reward', avg_episode_reward, step=episode)
