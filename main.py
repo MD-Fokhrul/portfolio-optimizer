@@ -52,8 +52,8 @@ from model.util import determine_device
 device_type = determine_device(force_cpu=force_cpu)
 
 log_interval_steps = args.log_interval
-dataloader = DatasetLoader(data_dir, dataset_name, limit_episode_steps=limit_episode_steps)
-data = dataloader.get_data(num_cols_sample=num_sample_stocks)
+dataloader = DatasetLoader(data_dir, dataset_name)
+data = dataloader.get_data(num_cols_sample=num_sample_stocks, limit_days=limit_episode_steps)
 num_days = data.shape[0]
 num_stocks = data.shape[1]
 
@@ -129,3 +129,6 @@ for episode in range(num_episodes):
         experiment.log_metric('avg_episode_reward', avg_episode_reward, step=episode)
         experiment.log_metric('max_episode_purchase_power', env.max_purchase_power, step=episode)
     env.render()
+
+if log_comet:
+    experiment.end()
