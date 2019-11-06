@@ -41,7 +41,8 @@ class DDPG():
         minibatch_arrays_map = self.replay_buffer.get_sample_arrays_map()  # sample random minibatch from R (s(i), a(i), r(i), s(i+1))
         states_minibatch, actions_minibatch, rewards_minibatch, result_states_minibatch = extract_tensors_from_buffer_map(minibatch_arrays_map)
 
-        next_q_minibatch = self.critic_target((result_states_minibatch, self.actor_target(result_states_minibatch)))  # should this be next_state or result_states_minibatch? paper has it one time as s(t+1) and one time as s(i+1). Guessing it's s(i+1)
+        next_predicted_action_minibatch = self.actor_target(result_states_minibatch).detach()
+        next_q_minibatch = self.critic_target((result_states_minibatch, next_predicted_action_minibatch)).detach()  # should this be next_state or result_states_minibatch? paper has it one time as s(t+1) and one time as s(i+1). Guessing it's s(i+1)
         # do we need something about terminal states for target_q_minibatch?
         target_q_minibatch = rewards_minibatch + self.discount_factor * next_q_minibatch  # set y(i) = r(i) + γq' | where γ is the discount factor, q' is critic_target output for [s(t+1), B], and  is action by actor_target(s(i+1))
 

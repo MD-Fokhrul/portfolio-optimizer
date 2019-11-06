@@ -39,7 +39,7 @@ class PortfolioEnv(gym.Env):
         return self._next_observation()
 
     def _next_observation(self):
-        new_stock_p =self._get_step_prices()
+        new_stock_p = self._get_step_prices()
         self.portfolio.update_p(new_stock_p)
         return self.portfolio.curr_weights()
 
@@ -49,8 +49,6 @@ class PortfolioEnv(gym.Env):
 
         self._take_action(action)
         self.current_step += 1
-        if self.current_step > self.max_steps:
-            self.current_step = 0
 
         # done = self.portfolio.cash <= 0
         done = (self.current_step + 1) == self.max_steps

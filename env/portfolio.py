@@ -73,7 +73,6 @@ class Portfolio:
         curr_weights = self.curr_weights()
         delta_weights = weights - curr_weights
         pp = max(0, self.purchase_power())
-
         """5 possible cases (of which 4 are written here directly, 1 is nested in self.buy()):"""
         """Sell, Sell short, Buy, Buy to cover a short position, buy on margin -- adjusted here"""
         for i in range(len(weights)):
@@ -84,7 +83,7 @@ class Portfolio:
             if dw == 0:
                 continue
             elif dw < 0:  # implies a selling action
-                if curr_w == 0 or new_w <= 0:  # check the case of possible short selling
+                if curr_w == 0 or new_w < 0:  # check the case of possible short selling
                     # hold?
                     continue
 

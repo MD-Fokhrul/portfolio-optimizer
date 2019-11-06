@@ -13,7 +13,7 @@ parser.add_argument('--limit_iters', type=int, help='limit total iterations - fo
 parser.add_argument('--num_sample_stocks', type=int, help='number of stocks to sample')
 parser.add_argument('--discount_factor', type=float, default=0.9, help='ddpg discount factor')
 parser.add_argument('--minibatch_size', type=int, default=8, help='ddpg minibatch size')
-parser.add_argument('--num_warmup_iterations', type=int, default=10, help='number of ddpg steps to warm up with a random action')
+parser.add_argument('--warmup_iters', type=int, default=10, help='number of ddpg steps to warm up with a random action')
 parser.add_argument('--random_process_theta', type=float, default=0.5, help='Random process theta')
 parser.add_argument('--log_interval', type=int, default=20, help='steps interval for print and comet logging')
 parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
@@ -25,7 +25,7 @@ log_comet = args.log_comet
 init_cash = args.init_cash
 num_episodes = args.episodes
 num_sample_stocks = args.num_sample_stocks
-num_warmup_iterations = args.num_warmup_iterations
+num_warmup_iterations = args.warmup_iters
 minibatch_size = args.minibatch_size
 learning_rate = args.lr
 discount_factor = args.discount_factor
