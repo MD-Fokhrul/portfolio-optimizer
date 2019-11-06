@@ -10,7 +10,7 @@ class DatasetLoader():
         data_ret = self.data_df.drop(['Date'], axis=1)
 
         if limit_days:
-            data_ret = self.data_df.tail(limit_days) # limit to last n days
+            data_ret = data_ret.tail(limit_days) # limit to last n days
 
         data_ret = data_ret.dropna(axis=1, how='any') # drop cols/stocks with NA prices
 
