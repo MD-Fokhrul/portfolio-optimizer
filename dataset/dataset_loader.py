@@ -1,4 +1,5 @@
 import pandas as pd
+from dataset.util import plot_stocks
 
 
 class DatasetLoader():
@@ -6,7 +7,7 @@ class DatasetLoader():
         dataset_path = '%s/%s.csv' % (data_dir, dataset_name)
         self.data_df = pd.read_csv(dataset_path)
 
-    def get_data(self, num_cols_sample=None, limit_days=None, random_state=1, as_numpy=True):
+    def get_data(self, num_cols_sample=None, limit_days=None, random_state=1, as_numpy=True, plot=False):
         data_ret = self.data_df.drop(['Date'], axis=1)
 
         if limit_days:
@@ -19,9 +20,11 @@ class DatasetLoader():
         if num_cols_sample:
             data_ret = data_ret.sample(num_cols_sample, axis=1, random_state=random_state)
 
+        fig = plot_stocks(data_ret) if plot else None
+
         if as_numpy:
             data_ret = data_ret.to_numpy()
 
-        return data_ret
+        return data_ret, fig
 
 

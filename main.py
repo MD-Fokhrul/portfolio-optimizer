@@ -54,7 +54,13 @@ device_type = determine_device(force_cpu=force_cpu)
 
 log_interval_steps = args.log_interval
 dataloader = DatasetLoader(data_dir, dataset_name)
-data = dataloader.get_data(num_cols_sample=num_sample_stocks, limit_days=limit_days, as_numpy=True)
+data, stocks_plot_fig = dataloader.get_data(num_cols_sample=num_sample_stocks,
+                                       limit_days=limit_days,
+                                       as_numpy=True,
+                                       plot=True)
+
+stocks_plot_fig.savefig('stocks_plot.png')
+
 num_days = data.shape[0]
 num_stocks = data.shape[1]
 
@@ -78,6 +84,7 @@ print('Running with params: %s' % str(params))
 
 if log_comet:
     experiment.log_parameters(params)
+    experiment.log_image('stocks_plot.png', 'stocks')
 
 env = PortfolioEnv(data, init_cash)
 agent = DDPG(num_stocks, num_stocks, minibatch_size, random_process_args,
