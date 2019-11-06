@@ -2,11 +2,13 @@ import argparse
 import json
 
 
+# load config file
 def load_config(config_filename='config.json'):
     with open(config_filename, 'r') as f:
         return json.load(f)
 
 
+# helper method for argparse
 def str2bool(v):
     if isinstance(v, bool):
        return v

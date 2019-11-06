@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from model.util import fanin_init
 
 
+# actor/critic parent class
 class ActorCriticModule(nn.Module):
     def init_weights(self, init_w):
         self.fc1.weight.data = fanin_init(self.fc1.weight.data.size())
@@ -19,6 +20,7 @@ class ActorCriticModule(nn.Module):
             target_param.data.copy_((1 - learning_rate) * target_param + learning_rate * param)
 
 
+# policy nn
 class Actor(ActorCriticModule):
     def __init__(self, num_states, num_actions, hidden1=400, hidden2=300, init_w=3e-3, parameters_source=None):
         super(Actor, self).__init__()
@@ -46,6 +48,7 @@ class Actor(ActorCriticModule):
         return F.softmax(out, dim=0)
 
 
+# critic nn
 class Critic(ActorCriticModule):
     def __init__(self, num_states, num_actions, hidden1=400, hidden2=300, init_w=3e-3, parameters_source=None):
         super(Critic, self).__init__()

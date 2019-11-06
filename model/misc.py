@@ -30,8 +30,7 @@ class ReplayBuffer():
     # get buffer row idxs for minibatch sample
     # used by get_sample_arrays_map
     def sample_buffer_idxs(self):
-        # TODO: is it ok to pick idx=0? idx=last? probably not last because that's the current one we just appended
-        # TODO: do we care about episodes?
+        # TODO: is it ok to pick idx=0?
         buffer_len = len(self.buffer_map['state']) - 1
         full_idx_range = range(buffer_len)
 
@@ -42,7 +41,6 @@ class ReplayBuffer():
             batch_idxs = np.random.randint(0, max(buffer_len, 1), size=self.minibatch_size)
 
         # TODO: do we need to make sure we sample doesn't span across multiple episdes?
-        # should the idxs be sorted? (probably not)
         return batch_idxs
 
     # select from list based on idxs
