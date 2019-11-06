@@ -48,17 +48,21 @@ class DDPG():
         self.critic.zero_grad()
         q_minibatch = self.critic((states_minibatch, actions_minibatch))
         value_loss = self.critic_criterion(target_q_minibatch, q_minibatch)  # does the order matter? paper says (targetq - q), other ddpg imps say loss(q, targetq)
+        critic_loss_val = value_loss.item()
         value_loss.backward()
         self.critic_optim.step()
 
         self.actor.zero_grad()
         policy_loss = (
             -self.critic((states_minibatch, self.actor(states_minibatch)))).mean()  # TODO: unsure about this
+        actor_loss_val = policy_loss.item()
         policy_loss.backward()
         self.actor_optim.step()
 
         self.critic_target.update_parameters(self.critic, self.learning_rate)
         self.actor_target.update_parameters(self.actor, self.learning_rate)
+
+        return critic_loss_val, actor_loss_val
 
     def append_observation(self, current_state, current_action, current_reward, next_state):
         self.replay_buffer.store(current_state, current_action, current_reward, next_state)

@@ -1,4 +1,5 @@
 import util
+from collections import defaultdict
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -87,6 +88,7 @@ for episode in range(num_episodes):
     agent.reset_action_noise_process()  # init random process for new episode
     current_state = env.reset()  # get initial state s(t)
     rewards = []
+    losses = defaultdict(list)
     for t in range(num_days - 1):
         if limit_iterations is not None and total_iterations_counter >= limit_iterations:
             break
@@ -102,7 +104,8 @@ for episode in range(num_episodes):
         rewards.append(current_reward)
 
         if t % log_interval_steps == 0:
-            avg_reward = sum(rewards[-log_interval_steps:]) / len(rewards[-log_interval_steps:])
+            interval_rewards = rewards[-log_interval_steps:]
+            avg_reward = sum(interval_rewards) / len(interval_rewards)
 
             print('Episode: %d | step: %d | reward: %2f' % (episode, t, avg_reward))
             env.render()
@@ -115,7 +118,17 @@ for episode in range(num_episodes):
         # TODO: might need to add episode done states to limit batches not to cross over episodes
 
         agent.append_observation(current_state, current_action, current_reward, next_state)  # store transition in R (s(t), a(t), r(t), s(t+1))
-        agent.update_policy()
+        critic_loss_val, actor_loss_val = agent.update_policy()
+        losses['critic'].append(critic_loss_val)
+        losses['actor'].append(actor_loss_val)
+
+        if log_comet:
+            interval_critic_losses = losses['critic'][-log_interval_steps:]
+            interval_actor_losses = losses['actor'][-log_interval_steps:]
+            avg_critic_loss = sum(interval_critic_losses) / len(interval_critic_losses)
+            avg_actor_loss = sum(interval_actor_losses) / len(interval_actor_losses)
+            experiment.log_metric('avg_step_critic_loss', avg_critic_loss, step=total_iterations_counter)
+            experiment.log_metric('avg_step_actor_loss', avg_actor_loss, step=total_iterations_counter)
 
         current_state = next_state
         total_iterations_counter += 1
@@ -126,7 +139,11 @@ for episode in range(num_episodes):
     print('Episode: %d final results:' % episode)
     if log_comet:
         avg_episode_reward = sum(rewards) / len(rewards)
+        avg_critic_loss = sum(losses['critic']) / len(losses['critic'])
+        avg_actor_loss = sum(losses['actor']) / len(losses['actor'])
         experiment.log_metric('avg_episode_reward', avg_episode_reward, step=episode)
+        experiment.log_metric('avg_episode_critic_loss', avg_critic_loss, step=episode)
+        experiment.log_metric('avg_episode_actor_loss', avg_actor_loss, step=episode)
         experiment.log_metric('max_episode_purchase_power', env.max_purchase_power, step=episode)
     env.render()
 
