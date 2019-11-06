@@ -14,7 +14,7 @@ parser.add_argument('--discount_factor', type=float, default=0.9, help='ddpg dis
 parser.add_argument('--minibatch_size', type=int, default=8, help='ddpg minibatch size')
 parser.add_argument('--num_warmup_iterations', type=int, default=10, help='number of ddpg steps to warm up with a random action')
 parser.add_argument('--random_process_theta', type=float, default=0.5, help='Random process theta')
-parser.add_argument('--log_interval', type=float, default=20, help='steps interval for print and comet logging')
+parser.add_argument('--log_interval', type=int, default=20, help='steps interval for print and comet logging')
 parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
 parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, default=False, help='should force cpu even if cuda is available')
 args = parser.parse_args()
@@ -100,8 +100,8 @@ for episode in range(num_episodes):
         next_state, current_reward, done, _ = env.step(current_action)  # TODO: execute action to get r(t) and s(t+1)
 
         rewards.append(current_reward)
-
-        if t > 0 and t % log_interval_steps == 0:
+        print (log_interval_steps)
+        if t % log_interval_steps == 0:
             avg_reward = sum(rewards[-log_interval_steps:]) / len(rewards[-log_interval_steps:])
 
             print('Episode: %d | step: %d | reward: %2f' % (episode, t, avg_reward))
