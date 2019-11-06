@@ -100,7 +100,7 @@ for episode in range(num_episodes):
         next_state, current_reward, done, _ = env.step(current_action)  # TODO: execute action to get r(t) and s(t+1)
 
         rewards.append(current_reward)
-        print (log_interval_steps)
+
         if t % log_interval_steps == 0:
             avg_reward = sum(rewards[-log_interval_steps:]) / len(rewards[-log_interval_steps:])
 
