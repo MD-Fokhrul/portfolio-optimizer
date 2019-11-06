@@ -54,7 +54,7 @@ device_type = determine_device(force_cpu=force_cpu)
 
 log_interval_steps = args.log_interval
 dataloader = DatasetLoader(data_dir, dataset_name)
-data = dataloader.get_data(num_cols_sample=num_sample_stocks, limit_days=limit_days)
+data = dataloader.get_data(num_cols_sample=num_sample_stocks, limit_days=limit_days, as_numpy=True)
 num_days = data.shape[0]
 num_stocks = data.shape[1]
 
