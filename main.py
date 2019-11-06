@@ -101,7 +101,7 @@ for episode in range(num_episodes):
 
         rewards.append(current_reward)
 
-        if t % log_interval_steps == 0:
+        if t > 0 and t % log_interval_steps == 0:
             avg_reward = sum(rewards[-log_interval_steps:]) / len(rewards[-log_interval_steps:])
 
             print('Episode: %d | step: %d | reward: %2f' % (episode, t, avg_reward))
