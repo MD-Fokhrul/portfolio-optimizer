@@ -23,13 +23,41 @@ Reinforcement Learning agent for portfolio optimization using DDPG and min-varia
 
 ## How to run
 
-Run `python main.py`
+Run `python main.py [...optional run args]`
 
 #### Run args
-// TODO
+- dataset_name: [dj/sp500]
+- data_dir
+- lr: learning rate
+- init_cash: starting cash balance for portfolio environment
+- episodes: number of training episodes
+- limit_days: limit data to days per episode (latest days in dataset)
+- limit_iters: hard limit on total iterations (for debugging)
+- num_sample_stocks: limit data to subset of stocks
+- discount_factor: q learning discount factor
+- minibatch_size: policy learning batch size
+- warmup_iters: number of iterations for random action generation in the start of training (should be at least minbatch_size for effective learning)
+- random_process_theta: theta hyperparameter for Ornstein Uhlenback Process for action noise
+- log_interval: reporting interval
+- log_comet: use comet ml for datalogging [True/False]
+- comet_tags: tags for comet ml
+- force_cpu: force pytorch to use cpu even if cuda available [True/False]
 
 ## Project structure
-// TODO
+- main.py
+Main training script. Instantiates agent and environment and runs training loop.
+
+- model
+Agent related classes and utilities. DDPG, Actor, Critic, etc.
+
+- env
+Portfolio/environment related classes and utilities. Portfolio, gym environment, etc.
+
+- dataset
+Dataset loader and utilities.
+
+- data
+Data directory with dow jones and S&P500 stock prices over period of time.
 
 ## References
 - Deep Reinforcement Learning Approach for Stock Trading - Zhuoran Xiong et al. | [paper on arxiv.org](https://arxiv.org/pdf/1811.07522.pdf?fbclid=IwAR24YGM8Jv-855TIIJlKC268cfZqQoIMJQPAiljv_RfpdUVyITcuHaVv30k)
