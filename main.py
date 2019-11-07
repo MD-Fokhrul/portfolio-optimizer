@@ -43,10 +43,11 @@ force_cpu = args.force_cpu
 limit_iterations = args.limit_iters
 limit_days = args.limit_days
 log_interval_steps = args.log_interval
-comet_tags = args.comet_tags
+comet_tags = args.comet_tags + [dataset_name]
 # END SET VARS #
 
 # OPTIONAL COMET DATA LOGGING SETUP #
+experiment = None
 if log_comet:
     from comet_ml import Experiment
     config = util.load_config()
@@ -115,8 +116,7 @@ for episode in range(num_episodes):
     agent.reset_action_noise_process()  # init random process for new episode
     current_state = env.reset()  # get initial state s(t)
 
-    rewards = [] # for logging
-    losses = defaultdict(list) # for logging
+    results = defaultdict(list) # for logging
     for t in range(num_days - 1):
         if limit_iterations is not None and total_iterations_counter >= limit_iterations:
             # option for hard limit on iterations for debugging
@@ -133,18 +133,20 @@ for episode in range(num_episodes):
         next_state, current_reward, done, _ = env.step(current_action)
 
         # logging
-        rewards.append(current_reward)
+        results['reward'].append(current_reward)
+        results['purchase_power'].append(env.current_purchase_power)
+        results['profit'].append(env.current_purchase_power - env.init_cash)
         if t % log_interval_steps == 0:
-            interval_rewards = rewards[-log_interval_steps:]
-            avg_reward = sum(interval_rewards) / len(interval_rewards)
+            avg_reward = util.avg_results(results, 'reward', lookback=log_interval_steps)
+            avg_ppwr = util.avg_results(results, 'purchase_power', lookback=log_interval_steps)
+            avg_profit = util.avg_results(results, 'profit', lookback=log_interval_steps)
 
             print('Episode: %d | step: %d | reward: %2f' % (episode, t, avg_reward))
             env.render()
             if log_comet:
-                experiment.log_metric('avg_step_interval_reward', avg_reward, step=total_iterations_counter)
-                purchase_power = env.portfolio.purchase_power()
-                experiment.log_metric('purchase_power', purchase_power, step=total_iterations_counter)
-                experiment.log_metric('profit', purchase_power - init_cash, step=total_iterations_counter)
+                experiment.log_metric('interval_reward', avg_reward, step=total_iterations_counter)
+                experiment.log_metric('interval_ppwr', avg_ppwr, step=total_iterations_counter)
+                experiment.log_metric('interval_profit', avg_profit, step=total_iterations_counter)
 
         # TODO: might need to add episode done states to limit batches not to cross over episodes
 
@@ -158,15 +160,13 @@ for episode in range(num_episodes):
             critic_loss_val, actor_loss_val = agent.update_policy()
 
             # logging
-            losses['critic'].append(critic_loss_val)
-            losses['actor'].append(actor_loss_val)
+            results['critic'].append(critic_loss_val)
+            results['actor'].append(actor_loss_val)
             if log_comet:
-                interval_critic_losses = losses['critic'][-log_interval_steps:]
-                interval_actor_losses = losses['actor'][-log_interval_steps:]
-                avg_critic_loss = sum(interval_critic_losses) / len(interval_critic_losses)
-                avg_actor_loss = sum(interval_actor_losses) / len(interval_actor_losses)
-                experiment.log_metric('avg_step_critic_loss', avg_critic_loss, step=total_iterations_counter)
-                experiment.log_metric('avg_step_actor_loss', avg_actor_loss, step=total_iterations_counter)
+                avg_critic_loss = util.avg_results(results, 'critic', lookback=log_interval_steps)
+                avg_actor_loss = util.avg_results(results, 'actor', lookback=log_interval_steps)
+                experiment.log_metric('interval_critic_loss', avg_critic_loss, step=total_iterations_counter)
+                experiment.log_metric('interval_actor_loss', avg_actor_loss, step=total_iterations_counter)
 
         current_state = next_state
         total_iterations_counter += 1
@@ -178,13 +178,16 @@ for episode in range(num_episodes):
     # logging
     print('Episode: %d final results:' % episode)
     if log_comet:
-        avg_episode_reward = sum(rewards) / len(rewards)
-        avg_critic_loss = sum(losses['critic']) / len(losses['critic'])
-        avg_actor_loss = sum(losses['actor']) / len(losses['actor'])
-        experiment.log_metric('avg_episode_reward', avg_episode_reward, step=episode)
+        avg_reward = util.avg_results(results, 'reward')
+        avg_critic_loss = util.avg_results(results, 'critic')
+        avg_actor_loss = util.avg_results(results, 'actor')
+        experiment.log_metric('avg_episode_reward', avg_reward, step=episode)
         experiment.log_metric('avg_episode_critic_loss', avg_critic_loss, step=episode)
         experiment.log_metric('avg_episode_actor_loss', avg_actor_loss, step=episode)
-        experiment.log_metric('max_episode_purchase_power', env.max_purchase_power, step=episode)
+        experiment.log_metric('max_episode_ppwr', env.max_purchase_power, step=episode)
+        experiment.log_metric('max_episode_profit', env.max_purchase_power - env.init_cash, step=episode)
+        experiment.log_metric('final_episode_ppwr', env.current_purchase_power, step=episode)
+        experiment.log_metric('final_episode_profit', env.current_purchase_power - env.init_cash, step=episode)
 
     env.render()
 

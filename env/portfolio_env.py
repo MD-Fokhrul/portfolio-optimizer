@@ -24,6 +24,7 @@ class PortfolioEnv(gym.Env):
         self.current_step = None
         self.reward = None
         self.portfolio = None
+        self.current_purchase_power = None
         self.max_purchase_power = None
         # init portfolio
         self.reset()
@@ -38,6 +39,7 @@ class PortfolioEnv(gym.Env):
             positions_price=self._init_prices(),
             positions_quantity=self._init_positions()
         )
+        self.current_purchase_power = 0
         self.max_purchase_power = 0
 
         return self._next_observation()
@@ -68,6 +70,7 @@ class PortfolioEnv(gym.Env):
         # calculate reward: new net worth - old net worth
         new_purchase_power = self.portfolio.purchase_power()
         self.max_purchase_power = max(self.max_purchase_power, new_purchase_power)
+        self.current_purchase_power = new_purchase_power
         reward = new_purchase_power - prev_purchase_power
 
         return obs, reward, done, {}
@@ -79,11 +82,12 @@ class PortfolioEnv(gym.Env):
         # Render the environment to the screen
         current_purchase_power = self.portfolio.purchase_power()
         profit = current_purchase_power - self.init_cash
+        max_profit = self.max_purchase_power - self.init_cash
         print('Step: %d' % self.current_step)
         print('Cash: %2f, total equity value: %2f' % (self.portfolio.cash, np.sum(self.portfolio.equity_val())))
         print('Shares held: %d, avg cost for held shares: %2f' % (self.portfolio.shares_held(), self.portfolio.cost_basis()))
         print('Net worth: %2f (Max net worth: %2f)' % (current_purchase_power, self.max_purchase_power))
-        print('Profit: %2f' % profit)
+        print('Profit: %2f (Max profit: %2f' % (profit, max_profit))
 
     # return stock prices for current step
     def _get_step_prices(self):

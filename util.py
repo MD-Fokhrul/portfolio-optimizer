@@ -20,3 +20,9 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
+def avg_results(results, key, lookback=None):
+    consider = results[key]
+    if lookback:
+        consider = consider[-lookback:]
+
+    return sum(consider) / len(consider)
