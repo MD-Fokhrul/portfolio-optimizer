@@ -20,6 +20,7 @@ parser.add_argument('--warmup_iters', type=int, default=10, help='number of ddpg
 parser.add_argument('--random_process_theta', type=float, default=0.5, help='Random process theta')
 parser.add_argument('--log_interval', type=int, default=20, help='steps interval for print and comet logging')
 parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
+parser.add_argument('--comet_log_level', type=str, default='episode', help='[interval, episode]')
 parser.add_argument('--comet_tags', nargs='+', default=[], help='tags for comet logging')
 parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, default=False, help='should force cpu even if cuda is available')
 args = parser.parse_args()
@@ -44,6 +45,7 @@ limit_iterations = args.limit_iters
 limit_days = args.limit_days
 log_interval_steps = args.log_interval
 comet_tags = args.comet_tags + [dataset_name]
+comet_log_level = args.comet_log_level
 # END SET VARS #
 
 # OPTIONAL COMET DATA LOGGING SETUP #
@@ -143,7 +145,7 @@ for episode in range(num_episodes):
 
             print('Episode: %d | step: %d | reward: %2f' % (episode, t, avg_reward))
             env.render()
-            if log_comet:
+            if log_comet and comet_log_level in ['interval']:
                 experiment.log_metric('interval_reward', avg_reward, step=total_iterations_counter)
                 experiment.log_metric('interval_ppwr', avg_ppwr, step=total_iterations_counter)
                 experiment.log_metric('interval_profit', avg_profit, step=total_iterations_counter)
@@ -162,7 +164,7 @@ for episode in range(num_episodes):
             # logging
             results['critic'].append(critic_loss_val)
             results['actor'].append(actor_loss_val)
-            if log_comet:
+            if log_comet and comet_log_level in ['interval']:
                 avg_critic_loss = util.avg_results(results, 'critic', lookback=log_interval_steps)
                 avg_actor_loss = util.avg_results(results, 'actor', lookback=log_interval_steps)
                 experiment.log_metric('interval_critic_loss', avg_critic_loss, step=total_iterations_counter)
@@ -177,7 +179,7 @@ for episode in range(num_episodes):
 
     # logging
     print('Episode: %d final results:' % episode)
-    if log_comet:
+    if log_comet and comet_log_level in ['episode', 'interval']:
         avg_reward = util.avg_results(results, 'reward')
         avg_critic_loss = util.avg_results(results, 'critic')
         avg_actor_loss = util.avg_results(results, 'actor')
