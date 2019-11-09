@@ -104,7 +104,9 @@ print('Running with params: %s' % str(params))
 
 if log_comet:
     experiment.log_parameters(params)
-    experiment.log_image('stocks_plot.png', 'stocks')
+    experiment.log_image('train_stocks_plot.png', 'train_window_stocks')
+    if test_stocks_plot_fig is not None:
+        experiment.log_image('test_stocks_plot.png', 'test_window_stocks')
     experiment.add_tags(comet_tags)
 
 num_stocks = train_data.shape[1]
