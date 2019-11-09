@@ -87,7 +87,7 @@ class PortfolioEnv(gym.Env):
         print('Cash: %2f, total equity value: %2f' % (self.portfolio.cash, np.sum(self.portfolio.equity_val())))
         print('Shares held: %d, avg cost for held shares: %2f' % (self.portfolio.shares_held(), self.portfolio.cost_basis()))
         print('Net worth: %2f (Max net worth: %2f)' % (current_purchase_power, self.max_purchase_power))
-        print('Profit: %2f (Max profit: %2f' % (profit, max_profit))
+        print('Profit: %2f (Max profit: %2f)' % (profit, max_profit))
 
     # return stock prices for current step
     def _get_step_prices(self):

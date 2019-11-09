@@ -10,7 +10,7 @@ class DatasetLoader():
     # get dataframe or numpy array.
     # can sample number of stocks (columns) and limit number of days (rows).
     # can also return plot figure with stock prices over time
-    def get_data(self, num_cols_sample=None, limit_days=None, random_state=1, as_numpy=True, plot=False):
+    def get_data(self, num_cols_sample=None, limit_days=None, test_split=0.0, random_state=1, as_numpy=True, plot=False):
         data_ret = self.data_df.drop(['Date'], axis=1) # we don't need date col
 
         if limit_days:
@@ -23,12 +23,21 @@ class DatasetLoader():
             # sample columns/stocks
             data_ret = data_ret.sample(num_cols_sample, axis=1, random_state=random_state)
 
+        # we want the first (1-test_split) rows as training data and the next test_split rows as test data
+        num_rows_data = data_ret.shape[0]
+        num_rows_test = int(test_split * num_rows_data)
+
+        train_data = data_ret[:num_rows_data-num_rows_test]
+        test_data = data_ret[-num_rows_test:]
+
         # plot stocks timeseries
-        fig = plot_stocks(data_ret) if plot else None
+        train_fig = plot_stocks(train_data) if plot else None
+        test_fig = plot_stocks(test_data) if plot and test_split > 0 else None
 
         if as_numpy:
-            data_ret = data_ret.to_numpy()
+            train_data = train_data.to_numpy()
+            test_data = test_data.to_numpy()
 
-        return data_ret, fig
+        return train_data, test_data, train_fig, test_fig
 
 
