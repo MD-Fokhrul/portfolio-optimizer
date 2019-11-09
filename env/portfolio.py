@@ -13,6 +13,7 @@ class Portfolio:
         self.cash = init_cash
         self.stock_p = positions_price
         self.stock_q = positions_quantity
+        self.volatility = np.ones(positions_price.shape)
         self.weight_norm_epsilon = weight_norm_epsilon # this makes sure we don't hit floating point equality errors for constraints (1.0 == 1.00...02 and thus violates constraints)
 
     # get the current weights of the portfolio's holdings.
@@ -52,6 +53,10 @@ class Portfolio:
     # update stock prices
     def update_p(self, stock_p):
         self.stock_p = stock_p
+
+    # update volatility prices
+    def update_v(self, volatility):
+        self.volatility = volatility
 
     # this changes the portfolio holdings based on newly introduced weights
     def purchase(self, weights):

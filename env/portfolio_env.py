@@ -1,16 +1,18 @@
 import gym
 import numpy as np
 from env.portfolio import Portfolio
+from env.util import calculate_volatility
 
 
 # OpenAI gym wrapper for environment class for portfolio
 class PortfolioEnv(gym.Env):
-    def __init__(self, data, init_cash):
+    def __init__(self, data, init_cash, volatiltiy_lookback=30):
         super(PortfolioEnv, self).__init__()
 
         # init data
         self.data = data # daily stock prices
         self.init_cash = init_cash # cash we start with
+        self.volatility_lookback =  volatiltiy_lookback # days lookback window for volatility
         self.max_steps = data.shape[0]
         self.num_shares = data.shape[1]
 
@@ -47,6 +49,8 @@ class PortfolioEnv(gym.Env):
     # inner method to return current state
     def _next_observation(self):
         new_stock_p = self._get_step_prices()
+        new_volatility = self._get_step_volatility()
+        self.portfolio.update_v(new_volatility)
         self.portfolio.update_p(new_stock_p)
         return self.portfolio.curr_weights()
 
@@ -71,7 +75,9 @@ class PortfolioEnv(gym.Env):
         new_purchase_power = self.portfolio.purchase_power()
         self.max_purchase_power = max(self.max_purchase_power, new_purchase_power)
         self.current_purchase_power = new_purchase_power
-        reward = new_purchase_power - prev_purchase_power
+        # reward = new_purchase_power - prev_purchase_power
+        gain = new_purchase_power - prev_purchase_power
+        reward = gain / sum(self.portfolio.volatility)
 
         return obs, reward, done, {}
 
@@ -104,4 +110,7 @@ class PortfolioEnv(gym.Env):
     # initialize np array of type dtype
     def _init_arr(self, dtype):
         return np.zeros((self.num_shares), dtype=dtype)
+
+    def _get_step_volatility(self):
+        return calculate_volatility(self.data, self.current_step, self.volatility_lookback)
 
