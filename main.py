@@ -8,6 +8,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_name', type=str, default='sp500', help='dataset name')
 parser.add_argument('--data_dir', type=str, default='data', help='data directory')
+parser.add_argument('--test_split', type=float, default=0.2, help='portion of days to set as test data')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 parser.add_argument('--init_cash', type=int, default=10000, help='initial cash')
 parser.add_argument('--episodes', type=int, default=20, help='number of training episodes')
@@ -36,6 +37,7 @@ minibatch_size = args.minibatch_size
 learning_rate = args.lr
 discount_factor = args.discount_factor
 data_dir = args.data_dir
+test_split = args.test_split
 dataset_name = args.dataset_name
 random_process_args = {
     'theta': args.random_process_theta
@@ -61,8 +63,9 @@ if log_comet:
 # ADDITIONAL IMPORTS # - imports are split because comet_ml requires being imported before torch
 from dataset.dataset_loader import DatasetLoader
 from model.agent import DDPG
-from env.portfolio_env import PortfolioEnv
 from model.util import determine_device
+from train import train
+from test import test
 # END ADDITIONAL IMPORTS #
 
 # cuda/cpu
@@ -70,16 +73,17 @@ device_type = determine_device(force_cpu=force_cpu)
 
 # load data
 dataloader = DatasetLoader(data_dir, dataset_name)
-data, stocks_plot_fig = dataloader.get_data(num_cols_sample=num_sample_stocks,
+train_data, test_data, train_stocks_plot_fig, test_stocks_plot_fig = dataloader.get_data(
+                                       num_cols_sample=num_sample_stocks,
                                        limit_days=limit_days,
+                                       test_split=test_split,
                                        as_numpy=True,
                                        plot=True)
 
 # save plot of stock prices in selected stock sample and day range
-stocks_plot_fig.savefig('stocks_plot.png')
-
-num_days = data.shape[0]
-num_stocks = data.shape[1]
+train_stocks_plot_fig.savefig('train_stocks_plot.png')
+if test_stocks_plot_fig is not None:
+    test_stocks_plot_fig.savefig('test_stocks_plot.png')
 
 params = {
     'init_cash': init_cash,
@@ -90,9 +94,8 @@ params = {
     'discount_factor': discount_factor,
     'random_process_theta': random_process_args['theta'],
     'log_interval_steps': log_interval_steps,
-    'data_shape': data.shape,
-    'num_days': num_days,
-    'num_stocks': num_stocks,
+    'train_data_shape': train_data.shape,
+    'test_data_shape': test_data.shape,
     'dataset_name': dataset_name,
     'device_type': device_type
 }
@@ -104,94 +107,17 @@ if log_comet:
     experiment.log_image('stocks_plot.png', 'stocks')
     experiment.add_tags(comet_tags)
 
-# init custom OpenAI gym env for stocks portfolio
-env = PortfolioEnv(data, init_cash)
+num_stocks = train_data.shape[1]
 
 # init DDPG agent
 agent = DDPG(num_stocks, num_stocks, minibatch_size, random_process_args,
              learning_rate=learning_rate, discount_factor=discount_factor,
-             device_type=device_type)
+             device_type=device_type, is_training=True)
 
-# training
-total_iterations_counter = 0 # counter for total iterations. num_episodes * num_days
-for episode in range(num_episodes):
-    agent.reset_action_noise_process()  # init random process for new episode
-    current_state = env.reset()  # get initial state s(t)
+train(train_data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
+      log_interval_steps, log_comet, comet_log_level, experiment)
 
-    results = defaultdict(list) # for logging
-    for t in range(num_days - 1):
-        if limit_iterations is not None and total_iterations_counter >= limit_iterations:
-            # option for hard limit on iterations for debugging
-            break
-
-        if total_iterations_counter < num_warmup_iterations:
-            # warmup to fill up the buffer with random actions
-            current_action = agent.select_random_action()
-        else:
-            # regular training. Let agent select action based on observation
-            current_action = agent.select_action(current_state)
-
-        # execute action on environment, observe new state and reward
-        next_state, current_reward, done, _ = env.step(current_action)
-
-        # logging
-        results['reward'].append(current_reward)
-        results['purchase_power'].append(env.current_purchase_power)
-        results['profit'].append(env.current_purchase_power - env.init_cash)
-        if t % log_interval_steps == 0:
-            avg_reward = util.avg_results(results, 'reward', lookback=log_interval_steps)
-            avg_ppwr = util.avg_results(results, 'purchase_power', lookback=log_interval_steps)
-            avg_profit = util.avg_results(results, 'profit', lookback=log_interval_steps)
-
-            print('Episode: %d | step: %d | reward: %2f' % (episode, t, avg_reward))
-            env.render()
-            if log_comet and comet_log_level in ['interval']:
-                experiment.log_metric('interval_reward', avg_reward, step=total_iterations_counter)
-                experiment.log_metric('interval_ppwr', avg_ppwr, step=total_iterations_counter)
-                experiment.log_metric('interval_profit', avg_profit, step=total_iterations_counter)
-
-        # TODO: might need to add episode done states to limit batches not to cross over episodes
-
-        if total_iterations_counter >= num_warmup_iterations:
-            # we only want to update the policy after the random state warmup
-
-            # store transition in R (s(t), a(t), r(t), s(t+1))
-            agent.append_observation(current_state, current_action, current_reward, next_state)
-
-            # update policy
-            critic_loss_val, actor_loss_val = agent.update_policy()
-
-            # logging
-            results['critic'].append(critic_loss_val)
-            results['actor'].append(actor_loss_val)
-            if log_comet and comet_log_level in ['interval']:
-                avg_critic_loss = util.avg_results(results, 'critic', lookback=log_interval_steps)
-                avg_actor_loss = util.avg_results(results, 'actor', lookback=log_interval_steps)
-                experiment.log_metric('interval_critic_loss', avg_critic_loss, step=total_iterations_counter)
-                experiment.log_metric('interval_actor_loss', avg_actor_loss, step=total_iterations_counter)
-
-        current_state = next_state
-        total_iterations_counter += 1
-
-    if limit_iterations is not None and total_iterations_counter >= limit_iterations:
-        # option for hard limit on iterations for debugging
-        break
-
-    # logging
-    print('Episode: %d final results:' % episode)
-    if log_comet and comet_log_level in ['episode', 'interval']:
-        avg_reward = util.avg_results(results, 'reward')
-        avg_critic_loss = util.avg_results(results, 'critic')
-        avg_actor_loss = util.avg_results(results, 'actor')
-        experiment.log_metric('avg_episode_reward', avg_reward, step=episode)
-        experiment.log_metric('avg_episode_critic_loss', avg_critic_loss, step=episode)
-        experiment.log_metric('avg_episode_actor_loss', avg_actor_loss, step=episode)
-        experiment.log_metric('max_episode_ppwr', env.max_purchase_power, step=episode)
-        experiment.log_metric('max_episode_profit', env.max_purchase_power - env.init_cash, step=episode)
-        experiment.log_metric('final_episode_ppwr', env.current_purchase_power, step=episode)
-        experiment.log_metric('final_episode_profit', env.current_purchase_power - env.init_cash, step=episode)
-
-    env.render()
+test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment)
 
 # logging
 if log_comet:
