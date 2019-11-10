@@ -22,11 +22,15 @@ class ActorCriticModule(nn.Module):
 
 # policy nn
 class Actor(ActorCriticModule):
-    def __init__(self, num_states, num_actions, hidden1=400, hidden2=300, init_w=3e-3, parameters_source=None):
+    def __init__(self, num_states, num_actions, latent_factor=2, init_w=3e-3, parameters_source=None):
         super(Actor, self).__init__()
 
         self.num_states = num_states
         self.num_actions = num_actions
+
+        # number of neurons in each hidden layer
+        hidden1 = num_states * latent_factor * 4
+        hidden2 = num_states * latent_factor * 3
 
         self.fc1 = nn.Linear(num_states, hidden1)
         self.fc2 = nn.Linear(hidden1, hidden2)
@@ -50,11 +54,15 @@ class Actor(ActorCriticModule):
 
 # critic nn
 class Critic(ActorCriticModule):
-    def __init__(self, num_states, num_actions, hidden1=400, hidden2=300, init_w=3e-3, parameters_source=None):
+    def __init__(self, num_states, num_actions, latent_factor=2, init_w=3e-3, parameters_source=None):
         super(Critic, self).__init__()
 
         self.num_states = num_states
         self.num_actions = num_actions
+
+        # number of neurons in each hidden layer
+        hidden1 = num_states * latent_factor * 4
+        hidden2 = num_states * latent_factor * 3
 
         self.fc1 = nn.Linear(num_states, hidden1)
         self.fc2 = nn.Linear(hidden1 + num_actions, hidden2)
