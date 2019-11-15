@@ -70,7 +70,7 @@ class Portfolio:
             print(np.sum(weights))
             raise Exception("This allocation is beyond the range permitted")
 
-        # exclude cash weight since we want to update actual cash as we buy/sell and then update cash weight with the de-facto cash left
+        # exclude cash weight since we want to update actual cash as we buy/sell
         weights = weights[:-1]
         curr_weights = self.curr_weights()[:-1]
 
