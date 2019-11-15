@@ -31,12 +31,12 @@ class Portfolio:
 
     # portfolio total net worth: value of equity + cash
     def purchase_power(self):
-        return self.cash + np.sum(self.equity_val())
+        return np.sum(self.equity_val())
 
     # value of equity in protfolio: stock prices * number of stocks held
     def equity_val(self):
         # equity value is price*quantity per stock.
-        return self.stock_p * self.stock_q
+        return np.append(self.stock_p * self.stock_q, self.cash)
 
     # total quantity of shares held
     def shares_held(self):
@@ -70,7 +70,10 @@ class Portfolio:
             print(np.sum(weights))
             raise Exception("This allocation is beyond the range permitted")
 
-        curr_weights = self.curr_weights()
+        # exclude cash weight since we want to update actual cash as we buy/sell and then update cash weight with the de-facto cash left
+        weights = weights[:-1]
+        curr_weights = self.curr_weights()[:-1]
+
         delta_weights = weights - curr_weights
         pp = max(0, self.purchase_power())
         for i in range(len(weights)):

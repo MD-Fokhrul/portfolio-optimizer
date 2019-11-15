@@ -110,9 +110,10 @@ if log_comet:
     experiment.add_tags(comet_tags)
 
 num_stocks = train_data.shape[1]
+num_states_and_actions = num_stocks + 1 # adding one to account for weight of cash in our portfolio
 
 # init DDPG agent
-agent = DDPG(num_stocks, num_stocks, minibatch_size, random_process_args,
+agent = DDPG(num_states_and_actions, num_states_and_actions, minibatch_size, random_process_args,
              learning_rate=learning_rate, discount_factor=discount_factor,
              device_type=device_type, is_training=True)
 
