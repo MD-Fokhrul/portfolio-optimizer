@@ -7,7 +7,10 @@ import numpy as np
 # input: lookback - desired volatility lookback window
 # output: 1xm volatility of stocks within lookback window
 def calculate_volatility(data, current_step, lookback):
-    # TODO: add robustness against step=0/1 - should return np.ones or zeros??
+    if current_step in (0, 1):
+        # at steps 0,1 we don't have any volatility to compute yet
+        return np.ones((1, data.shape[1])) / data.shape[1]
+
     lookback_start = max(current_step - lookback, 0)
     lookback_end = current_step
     prev_window = data[lookback_start:lookback_end]  # P[t-1] - latest lookback prices excluding today

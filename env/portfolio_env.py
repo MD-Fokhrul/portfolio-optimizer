@@ -75,9 +75,8 @@ class PortfolioEnv(gym.Env):
         new_purchase_power = self.portfolio.purchase_power()
         self.max_purchase_power = max(self.max_purchase_power, new_purchase_power)
         self.current_purchase_power = new_purchase_power
-        # reward = new_purchase_power - prev_purchase_power
         gain = new_purchase_power - prev_purchase_power
-        reward = gain / sum(self.portfolio.volatility)
+        reward = gain / np.sum(self.portfolio.volatility) # gain / volatility is our reward
 
         return obs, reward, done, {}
 
