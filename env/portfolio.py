@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 
 class Portfolio:
@@ -77,7 +78,14 @@ class Portfolio:
 
         delta_weights = weights - curr_weights
         pp = max(0, self.purchase_power())
-        for i in range(len(weights)):
+
+        # assuming first stocks iterated over take precedence until we run out of money
+        # we want to first sell and only then buy with newly liquid cash
+        # also shuffling stock order every time so we don't get stuck on buying/selling the same stocks each time
+        stock_indexes = list(range(len(weights)))
+        random.shuffle(stock_indexes)
+
+        for i in stock_indexes:
             # 3 options right now: buy, sell or hold (plan to add sell short, margin buy)
             curr_w = curr_weights[i]  # current state
             new_w = weights[i] # new desired state
