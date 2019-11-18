@@ -25,7 +25,7 @@ def test(data, agent, init_cash, log_interval_steps, log_comet, experiment, visu
         next_state, current_reward, done, _ = env.step(current_action)
 
         if visualize_holdings:
-            holdings_imgs.append(plot_holdings(env.portfolio.stock_q))
+            holdings_imgs.append(plot_holdings(env.portfolio.stock_q, title='day-{}'.format(t+1)))
 
         # logging
         results['reward'].append(current_reward)
