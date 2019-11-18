@@ -24,6 +24,7 @@ parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, de
 parser.add_argument('--comet_log_level', type=str, default='episode', help='[interval, episode]')
 parser.add_argument('--comet_tags', nargs='+', default=[], help='tags for comet logging')
 parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, default=False, help='should force cpu even if cuda is available')
+parser.add_argument('--visualize_portfolio', type=util.str2bool, nargs='?', const=True, default=True, help='should create portfolio visualization gif?')
 args = parser.parse_args()
 # END CLI ARG PARSE #
 
@@ -48,6 +49,7 @@ limit_days = args.limit_days
 log_interval_steps = args.log_interval
 comet_tags = args.comet_tags + [dataset_name]
 comet_log_level = args.comet_log_level
+visualize_portfolio = args.visualize_portfolio
 # END SET VARS #
 
 # OPTIONAL COMET DATA LOGGING SETUP #
@@ -120,7 +122,7 @@ agent = DDPG(num_states_and_actions, num_states_and_actions, minibatch_size, ran
 train(train_data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
       log_interval_steps, log_comet, comet_log_level, experiment)
 
-test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment)
+test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
 
 # logging
 if log_comet:

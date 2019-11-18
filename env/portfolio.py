@@ -10,6 +10,7 @@ class Portfolio:
                  weight_norm_epsilon=0.1
                  ):
 
+        self.init_cash = init_cash
         self.cash = init_cash
         self.stock_p = positions_price
         self.stock_q = positions_quantity
