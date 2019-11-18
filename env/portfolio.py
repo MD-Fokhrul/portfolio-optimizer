@@ -86,7 +86,7 @@ class Portfolio:
 
         # also shuffling stock order every time so we don't get stuck on buying the same stocks each time
         # assuming first stocks iterated over take precedence until we run out of money
-        # random.shuffle(delta_weights_buy_idxs)
+        random.shuffle(delta_weights_buy_idxs)
 
         for i in delta_weights_sell_idxs:
             curr_w = curr_weights[i]  # current state
