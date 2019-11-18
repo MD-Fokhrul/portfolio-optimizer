@@ -14,19 +14,21 @@ def plot_portfolio(portfolio, title=None, dims=(15.24, 5.12), holdings_portion=0
     return concat_images([holdings_plot_img, meta_plot_img])
 
 
-def plot_portfolio_meta(portfolio, dims):
+def plot_portfolio_meta(portfolio, dims, y_limit=15000):
     pp = portfolio.purchase_power()
     x = ['cash', 'NW', 'profit']
     y = [portfolio.cash, pp, pp - portfolio.init_cash]
     plt.figure()
     fig = sns.barplot(x=x, y=y).get_figure()
     fig.set_size_inches(dims)
+    ax = plt.axes()
+    ax.set(ylim=(0, y_limit))
     plt.close()
 
     return fig_to_img(fig)
 
 
-def plot_holdings(stock_q, dims, title=None):
+def plot_holdings(stock_q, dims, title=None, y_limit=100):
     x = np.array(range(stock_q.shape[0]))
     y = stock_q.squeeze()
 
@@ -34,9 +36,10 @@ def plot_holdings(stock_q, dims, title=None):
     fig = sns.barplot(x=x, y=y).get_figure()
     fig.set_size_inches(dims)
 
+    ax = plt.axes()
     if title is not None:
-        ax = plt.axes()
         ax.set_title(title)
+    ax.set(ylim=(0, y_limit))
 
     img = fig_to_img(fig)
 
