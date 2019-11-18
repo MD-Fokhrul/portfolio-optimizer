@@ -1,11 +1,11 @@
 from collections import defaultdict
 from env.portfolio_env import PortfolioEnv
 import util
-from env.util import plot_holdings
+from env.util import plot_portfolio
 import imageio
 
 
-def test(data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_holdings=False):
+def test(data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_portfolio=False):
     num_days = data.shape[0]
 
     env = PortfolioEnv(data, init_cash)
@@ -14,7 +14,7 @@ def test(data, agent, init_cash, log_interval_steps, log_comet, experiment, visu
     current_state = env.reset()
     results = defaultdict(list)  # for logging
 
-    if visualize_holdings:
+    if visualize_portfolio:
         holdings_imgs = []
 
     for t in range(num_days - 1):
@@ -24,8 +24,9 @@ def test(data, agent, init_cash, log_interval_steps, log_comet, experiment, visu
         # execute action on environment, observe new state and reward
         next_state, current_reward, done, _ = env.step(current_action)
 
-        if visualize_holdings:
-            holdings_imgs.append(plot_holdings(env.portfolio.stock_q, title='day-{}'.format(t+1)))
+        if visualize_portfolio:
+            portfolio_img = plot_portfolio(env.portfolio, title='day-{}'.format(t + 1))
+            holdings_imgs.append(portfolio_img)
 
         # logging
         results['reward'].append(current_reward)
@@ -45,7 +46,7 @@ def test(data, agent, init_cash, log_interval_steps, log_comet, experiment, visu
 
         current_state = next_state
 
-    if visualize_holdings:
+    if visualize_portfolio:
         imageio.mimwrite('test_holdings.gif', holdings_imgs)
 
     print('Test: final results:')
@@ -58,7 +59,7 @@ def test(data, agent, init_cash, log_interval_steps, log_comet, experiment, visu
         experiment.log_metric('test_final_episode_ppwr', env.current_purchase_power)
         experiment.log_metric('test_final_episode_profit', env.current_purchase_power - env.init_cash)
 
-        if visualize_holdings:
+        if visualize_portfolio:
             experiment.log_image('test_holdings.gif', 'test_holdings')
 
     env.render()
