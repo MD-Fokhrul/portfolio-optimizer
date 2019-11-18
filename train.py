@@ -1,4 +1,3 @@
-from model.agent import DDPG
 from env.portfolio_env import PortfolioEnv
 from collections import defaultdict
 import util
