@@ -79,33 +79,34 @@ class Portfolio:
         delta_weights = weights - curr_weights
         pp = max(0, self.purchase_power())
 
-        # assuming first stocks iterated over take precedence until we run out of money
-        # we want to first sell and only then buy with newly liquid cash
-        # also shuffling stock order every time so we don't get stuck on buying/selling the same stocks each time
-        stock_indexes = list(range(len(weights)))
-        random.shuffle(stock_indexes)
+        # we want to first liquidate and only then buy
+        # since we can't buy without liquid cash
+        delta_weights_buy_idxs = np.argwhere(delta_weights > 0).T.tolist()[0]
+        delta_weights_sell_idxs = np.argwhere(delta_weights < 0).T.tolist()[0]
 
-        for i in stock_indexes:
-            # 3 options right now: buy, sell or hold (plan to add sell short, margin buy)
+        # also shuffling stock order every time so we don't get stuck on buying the same stocks each time
+        # assuming first stocks iterated over take precedence until we run out of money
+        # random.shuffle(delta_weights_buy_idxs)
+
+        for i in delta_weights_sell_idxs:
             curr_w = curr_weights[i]  # current state
-            new_w = weights[i] # new desired state
+            new_w = weights[i]  # new desired state
+            dw = delta_weights[i]  # difference in weights to determine quantity to buy/sell
+
+            # negative change in stock weight - sell
+            if curr_w == 0 or new_w < 0:  # check the case of possible short selling
+                # hold
+                continue
+
+            # cash_change += self._sell(dw, i, pp)  # this is regular sell that will happen either way
+            self._sell(dw, i, pp)
+
+        for i in delta_weights_buy_idxs:
             dw = delta_weights[i] # difference in weights to determine quantity to buy/sell
 
-            if dw == 0:
-                # no change in stock weight - hold
-                continue
-            elif dw < 0:
-                # negative change in stock weight - sell
-                if curr_w == 0 or new_w < 0:  # check the case of possible short selling
-                    # hold
-                    continue
-
-                # cash_change += self._sell(dw, i, pp)  # this is regular sell that will happen either way
-                self._sell(dw, i, pp)
-            elif dw > 0:
-                # positive change in stock weight - buy
-                # cash_change -= self._buy(dw, i, pp)
-                self._buy(dw, i, pp)
+            # positive change in stock weight - buy
+            # cash_change -= self._buy(dw, i, pp)
+            self._buy(dw, i, pp)
 
         assert self.cash >= 0 # sanity check. Should not happen
 
