@@ -42,7 +42,6 @@ def determine_device(force_cpu=False):
 
 
 def save_model(dir_path, actor, critic, replay_buffer, identifier):
-    # TODO: save replay buffer?
     model_dir_path = '{}/{}'.format(dir_path, identifier)
     os.makedirs(model_dir_path, exist_ok=True)
 
