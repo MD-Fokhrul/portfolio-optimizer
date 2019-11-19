@@ -5,4 +5,5 @@ __pycache__
 *.png
 *.gif
 checkpoints
-*.csv
+CU_*.csv
+sample_submission.csv
