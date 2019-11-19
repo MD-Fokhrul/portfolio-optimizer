@@ -69,7 +69,7 @@ if log_comet:
                             workspace=config['comet']['workspace'])
 # END OPTIONAL COMET DATA LOGGING SETUP #
 
-checkpoints_dir_name = experiment.get_key if experiment is not None else str(int(time.time()))
+checkpoints_dir_name = experiment.get_key() if experiment is not None else str(int(time.time()))
 checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, checkpoints_dir_name)
 
 # ADDITIONAL IMPORTS # - imports are split because comet_ml requires being imported before torch
