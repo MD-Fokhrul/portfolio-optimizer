@@ -4,7 +4,7 @@ import util
 
 
 def train(data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
-          log_interval_steps, log_comet, comet_log_level, experiment):
+          log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir):
     num_days = data.shape[0]
 
     # init custom OpenAI gym env for stocks portfolio
@@ -75,6 +75,9 @@ def train(data, agent, init_cash, num_episodes, limit_iterations, num_warmup_ite
             # option for hard limit on iterations for debugging
             break
 
+        if (episode+1) % checkpoints_interval == 0:
+            agent.save_model(checkpoints_dir, identifier=episode+1)
+
         # logging
         print('Train episode: %d final results:' % episode)
         if log_comet and comet_log_level in ['episode', 'interval']:
@@ -91,5 +94,6 @@ def train(data, agent, init_cash, num_episodes, limit_iterations, num_warmup_ite
 
         env.render()
 
+    agent.save_model(checkpoints_dir, identifier='final')
 
 

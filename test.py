@@ -6,6 +6,7 @@ import imageio
 
 
 def test(data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_portfolio=False):
+    # TODO: keep learning during test?
     num_days = data.shape[0]
 
     env = PortfolioEnv(data, init_cash)

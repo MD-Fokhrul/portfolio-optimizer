@@ -1,5 +1,6 @@
 # PRELIMINARY IMPORTS #
 import util
+import time
 from collections import defaultdict
 # END PRELIMINARY IMPORTS #
 
@@ -25,6 +26,9 @@ parser.add_argument('--comet_log_level', type=str, default='episode', help='[int
 parser.add_argument('--comet_tags', nargs='+', default=[], help='tags for comet logging')
 parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, default=False, help='should force cpu even if cuda is available')
 parser.add_argument('--visualize_portfolio', type=util.str2bool, nargs='?', const=True, default=True, help='should create portfolio visualization gif?')
+parser.add_argument('--checkpoints_interval', type=int, default=50, help='episodes interval for saving model checkpoint')
+parser.add_argument('--checkpoints_root_dir', type=str, default='checkpoints', help='checkpoint root directory')
+parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
 args = parser.parse_args()
 # END CLI ARG PARSE #
 
@@ -50,6 +54,9 @@ log_interval_steps = args.log_interval
 comet_tags = args.comet_tags + [dataset_name]
 comet_log_level = args.comet_log_level
 visualize_portfolio = args.visualize_portfolio
+checkpoints_interval = args.checkpoints_interval
+checkpoints_root_dir = args.checkpoints_root_dir
+load_model = args.load_model
 # END SET VARS #
 
 # OPTIONAL COMET DATA LOGGING SETUP #
@@ -61,6 +68,9 @@ if log_comet:
                             project_name=config['comet']['project_name'],
                             workspace=config['comet']['workspace'])
 # END OPTIONAL COMET DATA LOGGING SETUP #
+
+checkpoints_dir_name = experiment.get_key if experiment is not None else str(int(time.time()))
+checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, checkpoints_dir_name)
 
 # ADDITIONAL IMPORTS # - imports are split because comet_ml requires being imported before torch
 from dataset.dataset_loader import DatasetLoader
@@ -119,8 +129,11 @@ agent = DDPG(num_states_and_actions, num_states_and_actions, minibatch_size, ran
              learning_rate=learning_rate, discount_factor=discount_factor,
              device_type=device_type, is_training=True)
 
+if load_model is not None:
+    agent.load_model(load_model)
+
 train(train_data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
-      log_interval_steps, log_comet, comet_log_level, experiment)
+      log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir)
 
 test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
 

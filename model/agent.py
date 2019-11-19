@@ -3,7 +3,7 @@ from torch import nn
 import numpy as np
 from model.nn import Actor, Critic
 from model.misc import ReplayBuffer, OrnsteinUhlenbeckProcess
-from model.util import extract_tensors_from_buffer_map, to_cuda_if_needed, to_tensor
+from model.util import extract_tensors_from_buffer_map, to_cuda_if_needed, to_tensor, save_model, load_model
 
 
 class DDPG():
@@ -116,6 +116,16 @@ class DDPG():
     # reset random process decay
     def reset_action_noise_process(self):
         self.random_process.reset_states()
+
+    def save_model(self, dir_path, identifier):
+        save_model(dir_path, self.actor, self.critic, self.replay_buffer, identifier=identifier)
+
+    def load_model(self, model_dir_path):
+        load_model(model_dir_path, self.actor, self.critic, self.replay_buffer)
+
+
+
+
 
 
 
