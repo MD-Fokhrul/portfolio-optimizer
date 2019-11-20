@@ -29,6 +29,7 @@ parser.add_argument('--visualize_portfolio', type=util.str2bool, nargs='?', cons
 parser.add_argument('--checkpoints_interval', type=int, default=50, help='episodes interval for saving model checkpoint')
 parser.add_argument('--checkpoints_root_dir', type=str, default='checkpoints', help='checkpoint root directory')
 parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
+parser.add_argument('--modes', nargs='+', default=['train', 'test'], help='train and/or test')
 args = parser.parse_args()
 # END CLI ARG PARSE #
 
@@ -57,7 +58,12 @@ visualize_portfolio = args.visualize_portfolio
 checkpoints_interval = args.checkpoints_interval
 checkpoints_root_dir = args.checkpoints_root_dir
 load_model = args.load_model
+modes = args.modes
 # END SET VARS #
+
+if len(modes) == 0 or len([x for x in modes if x not in ['train', 'test']]):
+    print('please provide train or test modes')
+    exit(1)
 
 # OPTIONAL COMET DATA LOGGING SETUP #
 experiment = None
@@ -132,10 +138,12 @@ agent = DDPG(num_states_and_actions, num_states_and_actions, minibatch_size, ran
 if load_model is not None:
     agent.load_model(load_model)
 
-train(train_data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
-      log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir)
+if 'train' in modes:
+    train(train_data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
+          log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir)
 
-test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
+if 'test' in modes:
+    test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
 
 # logging
 if log_comet:
