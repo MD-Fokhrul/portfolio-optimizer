@@ -9,7 +9,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_name', type=str, default='sp500', help='dataset name')
 parser.add_argument('--data_dir', type=str, default='data', help='data directory')
-parser.add_argument('--test_split', type=float, default=0.2, help='portion of days to set as test data')
+parser.add_argument('--test_split_days', type=int, default=152, help='number of days to set as test data')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 parser.add_argument('--init_cash', type=int, default=10000, help='initial cash')
 parser.add_argument('--episodes', type=int, default=20, help='number of training episodes')
@@ -43,7 +43,7 @@ minibatch_size = args.minibatch_size
 learning_rate = args.lr
 discount_factor = args.discount_factor
 data_dir = args.data_dir
-test_split = args.test_split
+test_split_days = args.test_split_days
 dataset_name = args.dataset_name
 random_process_args = {
     'theta': args.random_process_theta
@@ -94,7 +94,7 @@ dataloader = DatasetLoader(data_dir, dataset_name)
 train_data, test_data, train_stocks_plot_fig, test_stocks_plot_fig = dataloader.get_data(
                                        num_cols_sample=num_sample_stocks,
                                        limit_days=limit_days,
-                                       test_split=test_split,
+                                       test_split_days=test_split_days,
                                        as_numpy=True,
                                        plot=True)
 
