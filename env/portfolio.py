@@ -58,7 +58,9 @@ class Portfolio:
     # this changes the portfolio holdings based on newly introduced weights
     def purchase(self, weights):
         constraints = self.weight_constraints()
-        orig_weights = weights
+        orig_weights = np.array(weights)
+
+        self._mask_weights_nan_stocks(weights)
 
         # weights should already be normalized.
         # but we normalize them with an epsilon to ensure no floating point rounding errors occur
@@ -150,8 +152,8 @@ class Portfolio:
         # get stock quantity based on a weight which represents a proportion of the portfolio value.
         return abs(int(weight * purchase_power / self.stock_p[stock_idx])) # TODO: maybe should be floor/ceiling?
 
-
-
+    def _mask_weights_nan_stocks(self, weights):
+        weights[:-1][self.stock_p == -1] = 0
 
 
 

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from dataset.util import plot_stocks
 
 
@@ -17,7 +18,10 @@ class DatasetLoader():
             # limit to latest n days
             data_ret = data_ret.tail(limit_days)
 
-        data_ret = data_ret.dropna(axis=1, how='any') # drop cols/stocks with NA prices in selected day range
+        # data_ret = data_ret.dropna(axis=1, how='any') # drop cols/stocks with NA prices in selected day range
+
+        # fill nans with -1 which will be ignored by environment
+        data_ret = data_ret.fillna(-1)
 
         if num_cols_sample:
             # sample columns/stocks
