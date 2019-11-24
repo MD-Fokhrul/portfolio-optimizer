@@ -87,7 +87,7 @@ train_loader = FuturePricesLoader(data_loader_config, 'train', batch_size, data_
                                       limit_days=limit_days,
                                       exclude_days=val_days)
 if val_days and val_days > 0:
-    validation_loader = FuturePricesLoader(data_loader_config, 'train', batch_size, data_dir, dataset_name,
+    validation_loader = FuturePricesLoader(data_loader_config, 'validation', batch_size, data_dir, dataset_name,
                                           days_lookback_window, num_sample_stocks,
                                           limit_days=val_days)
 
