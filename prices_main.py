@@ -139,7 +139,7 @@ for epoch in range(0, epochs):
         optimizer.zero_grad()
         prediction = model(data)
 
-        prices_loss = criterion(prediction['next_prices'], target['next_prices'])
+        prices_loss = criterion(prediction['next_prices'], target['next_prices'].squeeze())
         combined_loss = prices_loss # if we add more factor other than prices, consider weighting
         combined_loss.backward()
 
@@ -193,7 +193,7 @@ for epoch in range(0, epochs):
 
             prediction = model(data)
 
-            prices_loss = criterion(prediction['next_prices'], target['next_prices'])
+            prices_loss = criterion(prediction['next_prices'], target['next_prices'].squeeze())
 
             epoch_validation_prices_losses.append(prices_loss.item())
 
