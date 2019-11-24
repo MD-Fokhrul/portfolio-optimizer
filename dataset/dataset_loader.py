@@ -10,12 +10,17 @@ class DatasetLoader():
     # get dataframe or numpy array.
     # can sample number of stocks (columns) and limit number of days (rows).
     # can also return plot figure with stock prices over time
-    def get_data(self, num_cols_sample=None, limit_days=None, test_split_days=0, random_state=1, as_numpy=True, plot=False):
+    def get_data(self, num_cols_sample=None, limit_days=None, exclude_days=None,
+                 test_split_days=0, random_state=1, as_numpy=True, plot=False):
+
         data_ret = self.data_df.drop(['Date'], axis=1) # we don't need date col
 
         if limit_days:
             # limit to latest n days
-            data_ret = data_ret.tail(limit_days)
+            data_ret = data_ret.tail(limit_days).reset_index(drop=True, inplace=False)
+
+        if exclude_days:
+            data_ret = data_ret.head(data_ret.shape[0] - exclude_days).reset_index(drop=True, inplace=False)
 
         data_ret = data_ret.dropna(axis=1, how='any') # drop cols/stocks with NA prices in selected day range
 
