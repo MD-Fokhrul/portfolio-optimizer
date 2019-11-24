@@ -25,7 +25,7 @@
         },
         "test": {
             "shuffle": false,
-            "num_workers": 4
+            "num_workers": 1
         }
     },
     "target":{
