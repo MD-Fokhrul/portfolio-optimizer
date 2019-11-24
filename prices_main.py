@@ -61,7 +61,7 @@ if log_comet:
 
 # SETUP CHECKPOINTS DIR #
 if save_checkpoints:
-    checkpoints_dir_name = experiment.get_key() if experiment is not None else str(start)
+    checkpoints_dir_name = experiment.get_key() if experiment is not None else str(int(start))
     checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, checkpoints_dir_name)
     os.makedirs(checkpoints_dir, exist_ok=True)
 # END SETUP CHECKPOINTS DIR #
@@ -171,8 +171,8 @@ for epoch in range(0, epochs):
     end_epoch_train = time.time()
     epoch_elapsed = end_epoch_train - start_epoch_train
 
-    print('Saving interim model...')
     if save_checkpoints and (epoch+1) % checkpoints_interval == 0:
+        print('Saving interim model...')
         model_path = '{}/model_{}.pth'.format(checkpoints_dir, epoch)
         torch.save(model.state_dict(), model_path)
 
