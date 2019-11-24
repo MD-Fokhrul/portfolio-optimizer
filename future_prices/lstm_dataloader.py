@@ -62,6 +62,7 @@ class FuturePrices(object):
         self.history_number = config['data_loader']['historic']['number']
         self.history_frequency = config['data_loader']['historic']['frequency']
         self.normalize_targets = config['target']['normalize']
+        self.normalize_images = config['image']['normalize']
         self.target_mean = {}
         target_mean = config['target']['mean']
         for k, v in target_mean.items():
@@ -147,21 +148,26 @@ class FuturePrices(object):
         print('Phase:', phase, '# of data:', len(self.indices))
 
         self.past_prices_transform = {
-            'train': transforms.Compose([
+            True: transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean=config['image']['norm']['mean'],
                                      std=config['image']['norm']['std'])
             ]),
-            'validation': transforms.Compose([
+            False: transforms.Compose([
+                transforms.ToTensor()
+            ])
+        }[self.normalize_images]
+
+        self.next_prices_transform = {
+            True: transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean=config['image']['norm']['mean'],
                                      std=config['image']['norm']['std'])
             ]),
-            'test': transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=config['image']['norm']['mean'],
-                                     std=config['image']['norm']['std'])
-            ])}[phase]
+            False: transforms.Compose([
+                transforms.ToTensor()
+            ])
+        }[self.normalize_targets]
         # TODO: might want to add different transforms for factor data
 
     def __getitem__(self, index):
@@ -173,11 +179,13 @@ class FuturePrices(object):
             inputs[i] = {}
 
             past_prices_img = self.dataframe.iloc[window_start-i+1:index-i+1].reset_index(drop=True, inplace=False).to_numpy()
+            past_prices_img = self.past_prices_transform(past_prices_img)
+            inputs[i]['past_prices'] = past_prices_img
 
-            inputs[i]['past_prices'] = (self.past_prices_transform(past_prices_img))
-        next_prices = self.dataframe.iloc[index+1].to_numpy()
-        next_prices_norm = self.past_prices_transform(next_prices.reshape(1, -1)) # might need to remove reshape if we predict more than one line
-        labels['next_prices'] = next_prices_norm
+        next_prices = self.dataframe.iloc[index+1].to_numpy().reshape(1, -1)
+        next_prices = self.next_prices_transform(next_prices) # might need to remove reshape if we predict more than one line
+
+        labels['next_prices'] = next_prices
 
         return inputs, labels
 

@@ -16,7 +16,7 @@
         },
         "data_dir": "./data_sample3/",
         "train":{
-            "shuffle": false,
+            "shuffle": true,
             "num_workers": 8
         },
         "validation": {
@@ -29,11 +29,12 @@
         }
     },
     "target":{
-        "normalize": true,
+        "normalize": false,
         "mean": {"next_prices": 97.75079273870783},
         "std": {"next_prices": 18.99081616210492}
     },
     "image": {
+        "normalize": false,
         "norm": {
             "mean": [
                 97.75079273870783
