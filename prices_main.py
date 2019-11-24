@@ -21,6 +21,7 @@ parser.add_argument('--checkpoints_root_dir', type=str, default='prices_checkpoi
 parser.add_argument('--results_root_dir', type=str, default='prices_results', help='results directory')
 parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
 parser.add_argument('--modes', nargs='+', default=['train'], help='train and/or test')
+parser.add_argument('--test_predict_days', type=int, default=30, help='how many days to generate for test')
 parser.add_argument('--log_interval', type=int, default=20, help='batch interval for print and comet logging')
 parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
 parser.add_argument('--log_batches', type=util.str2bool, nargs='?', const=True, default=False, help='should log for batches')
@@ -49,6 +50,7 @@ checkpoints_interval = args.checkpoints_interval
 checkpoints_root_dir = args.checkpoints_root_dir
 load_model = args.load_model
 modes = args.modes
+test_predict_days = args.test_predict_days
 results_root_dir = args.results_root_dir
 
 start = time.time()
@@ -179,6 +181,6 @@ if 'train' in modes:
 
 if 'test' in modes:
     print('--Started testing--')
-    test(model, 30, test_loader, device, results_dir)
+    test(model, test_predict_days, test_loader, device, results_dir)
     print('--Finished testing--')
 
