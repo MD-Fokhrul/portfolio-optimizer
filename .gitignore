@@ -8,3 +8,5 @@ checkpoints
 CU_*.csv
 sample_submission.csv
 *.swp
+prices_checkpoints
+prices_results

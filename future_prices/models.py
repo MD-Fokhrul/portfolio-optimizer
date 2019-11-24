@@ -1,6 +1,7 @@
 from torchvision import models
 import torch.nn as nn
 import torch
+from future_prices.util import find_latest_model_name
 
 
 class PricePredictionModel(nn.Module):
@@ -67,4 +68,9 @@ class PricePredictionModel(nn.Module):
         # regession networks.
         prediction = {'next_prices': torch.squeeze(self.predict_prices(x_cat))}
         return prediction
+
+    def load(self, model_dir_path):
+        model_path = find_latest_model_name(model_dir_path)
+        print('Loading saved model: {}'.format(model_path))
+        self.load_state_dict(torch.load(model_path))
 

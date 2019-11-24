@@ -18,6 +18,9 @@ parser.add_argument('--days_lookback_window', type=int, default=30, help='number
 parser.add_argument('--save_checkpoints', type=util.str2bool, nargs='?', const=True, default=True, help='should save checkpoints')
 parser.add_argument('--checkpoints_interval', type=int, default=10, help='episodes interval for saving model checkpoint')
 parser.add_argument('--checkpoints_root_dir', type=str, default='prices_checkpoints', help='checkpoint root directory')
+parser.add_argument('--results_root_dir', type=str, default='prices_results', help='results directory')
+parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
+parser.add_argument('--modes', nargs='+', default=['train'], help='train and/or test')
 parser.add_argument('--log_interval', type=int, default=20, help='batch interval for print and comet logging')
 parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
 parser.add_argument('--log_batches', type=util.str2bool, nargs='?', const=True, default=False, help='should log for batches')
@@ -44,6 +47,9 @@ log_epochs = args.log_epochs
 save_checkpoints = args.save_checkpoints
 checkpoints_interval = args.checkpoints_interval
 checkpoints_root_dir = args.checkpoints_root_dir
+load_model = args.load_model
+modes = args.modes
+results_root_dir = args.results_root_dir
 
 start = time.time()
 
@@ -64,14 +70,23 @@ if save_checkpoints:
     checkpoints_dir_name = experiment.get_key() if experiment is not None else str(int(start))
     checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, checkpoints_dir_name)
     os.makedirs(checkpoints_dir, exist_ok=True)
+else:
+    checkpoints_dir = None
 # END SETUP CHECKPOINTS DIR #
+
+# SETUP RESULTS DIR #
+if 'test' in modes:
+    results_dir_name = experiment.get_key() if experiment is not None else str(int(start))
+    results_dir = '{}/{}'.format(results_root_dir, results_dir_name)
+    os.makedirs(results_dir, exist_ok=True)
+# END SETUP RESULTS DIR #
 
 # SETUP TORCH IMPORTS #  <--- must come after comet_ml import
 import torch
-import torch.optim as optim
-from torch import nn
 from future_prices.models import PricePredictionModel
 from future_prices.lstm_dataloader import FuturePricesLoader
+from future_prices.train import train
+from future_prices.test import test
 # END SETUP TORCH IMPORTS #
 
 # SETUP DEVICE #
@@ -81,15 +96,36 @@ print('device is: ', device)
 # END SETUP DEVICE #
 
 # SETUP DATALOADERS #
+
+val_data_dim = None
+train_data_dim = None
+test_data_dim = None
+
 data_loader_config = util.load_config('future_prices/lstm_config.json')
-train_loader = FuturePricesLoader(data_loader_config, 'train', batch_size, data_dir, dataset_name,
-                                      days_lookback_window, num_sample_stocks,
-                                      limit_days=limit_days,
-                                      exclude_days=val_days)
-if val_days and val_days > 0:
-    validation_loader = FuturePricesLoader(data_loader_config, 'validation', batch_size, data_dir, dataset_name,
+
+if 'train' in modes:
+    train_loader = FuturePricesLoader(data_loader_config, 'train', batch_size, data_dir, dataset_name,
                                           days_lookback_window, num_sample_stocks,
-                                          limit_days=val_days)
+                                          limit_days=limit_days,
+                                          exclude_days=val_days)
+
+    train_data_dim = train_loader.data_dim
+
+    if val_days and val_days > 0:
+        validation_loader = FuturePricesLoader(data_loader_config, 'validation', batch_size, data_dir, dataset_name,
+                                              days_lookback_window, num_sample_stocks,
+                                              limit_days=val_days)
+        val_data_dim = validation_loader.data_dim
+
+if 'test' in modes:
+    test_loader = FuturePricesLoader(data_loader_config, 'test', batch_size, data_dir, dataset_name,
+                                          days_lookback_window, num_sample_stocks,
+                                          # +1 for window offset, +2 for temporal frequency offset (see indices in dataloader)
+                                          limit_days=days_lookback_window+3)
+
+    test_data_dim = test_loader.data_dim
+
+
 
 validation_dataloader = None
 # END SETUP DATALOADERS #
@@ -100,8 +136,9 @@ params = {
     'epochs': epochs,
     'log_interval': log_interval,
     'device': device_type,
-    'train_data_shape': train_loader.data_dim,
-    'validation_data_shape': validation_loader.data_dim
+    'train_data_shape': train_data_dim,
+    'validation_data_shape': val_data_dim,
+    'test_data_shape': test_data_dim
 }
 
 print('running with params: {}'.format(params))
@@ -113,99 +150,29 @@ if log_comet:
     experiment.add_tags(comet_tags)
 
 # SETUP MODEL #
-model = PricePredictionModel(input_output_size=train_loader.data_dim[1],
+assert (train_data_dim or test_data_dim)
+input_output_size = train_data_dim[1] if train_data_dim else test_data_dim[1]
+
+model = PricePredictionModel(input_output_size=input_output_size,
                              hidden_size=64) # todo: what about this hyperparam?
+
+if load_model is not None:
+    model.load(load_model)
+
 if device_type == 'cuda':
     model.cuda()
 # END SETUP MODEL #
 
-criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=lr)
-for epoch in range(0, epochs):
-    start_epoch_train = time.time()
-    epoch_prices_losses = []
-    # epoch training
-    model.train()
-    running_prices_loss = 0.0
-    for batch_idx, (data, target) in enumerate(train_loader):
-        for k, v in data.items():
-            for k2, v2 in v.items():
-                data[k][k2] = v2.float().to(device)
-        for k, v in target.items():
-            target[k] = v.float().to(device)
 
-        # for k,v in data.items():
-        #     print('{}: {}'.format(k, v))
+if 'train' in modes:
+    print('--Started training--')
+    train(model, lr, train_loader, validation_loader, epochs, device,
+          save_checkpoints, checkpoints_dir, checkpoints_interval,
+          log_interval, log_batches, log_epochs, log_comet, experiment)
+    print('--Finished training--')
 
-
-        optimizer.zero_grad()
-        prediction = model(data)
-
-        prices_loss = criterion(prediction['next_prices'], target['next_prices'].squeeze())
-        combined_loss = prices_loss # if we add more factor other than prices, consider weighting
-        combined_loss.backward()
-
-        optimizer.step()
-
-        # print avg batch statistics
-        running_prices_loss += prices_loss.item()
-
-        if batch_idx > 0 and batch_idx % log_interval == 0:
-            avg_batch_prices_loss = running_prices_loss / log_interval
-            epoch_prices_losses.append(avg_batch_prices_loss)
-            if log_comet and log_batches:
-                experiment.log_metric('batch_train_prices_loss', avg_batch_prices_loss, step=batch_idx)
-            print('[epoch: %d, batch:  %5d] prices loss: %.5f' % (epoch + 1, batch_idx + 1, avg_batch_prices_loss))
-            running_prices_loss = 0.0
-
-        # Remove this when actually training.
-        # Used to terminate early.
-    #             if batch_idx >= 4:
-    #                 break
-
-    if log_comet and log_epochs:
-        if len(epoch_prices_losses) > 0 and len(epoch_prices_losses) > 0:
-            epoch_prices_loss = sum(epoch_prices_losses) / len(epoch_prices_losses)
-            print('[avg train loss epoch %d] prices loss %.5f' % (epoch, epoch_prices_loss))
-            experiment.log_metric('epoch_train_prices_loss', epoch_prices_loss, epoch)
-        else:
-            print('0 epoch losses for training')
-    end_epoch_train = time.time()
-    epoch_elapsed = end_epoch_train - start_epoch_train
-
-    if save_checkpoints and (epoch+1) % checkpoints_interval == 0:
-        print('Saving interim model...')
-        model_path = '{}/model_{}.pth'.format(checkpoints_dir, epoch)
-        torch.save(model.state_dict(), model_path)
-
-    print('epoch %d: %f elapsed' % (epoch, epoch_elapsed))
-    if log_comet:
-        experiment.log_metric('epoch_train_time', end_epoch_train - start_epoch_train, step=epoch)
-
-    # epoch validation
-    model.eval()
-    with torch.no_grad():
-        epoch_validation_prices_losses = []
-        for batch_idx, (data, target) in enumerate(validation_loader):
-            for k, v in data.items():
-                for k2, v2 in v.items():
-                    data[k][k2] = v2.float().to(device)
-            for k, v in target.items():
-                target[k] = v.float().to(device)
-
-            prediction = model(data)
-
-            prices_loss = criterion(prediction['next_prices'], target['next_prices'].squeeze())
-
-            epoch_validation_prices_losses.append(prices_loss.item())
-
-        if len(epoch_validation_prices_losses) > 0:
-            epoch_validation_prices_loss = sum(epoch_validation_prices_losses) / len(epoch_validation_prices_losses)
-            print('[avg validation loss epoch %d] prices loss %.5f' % (epoch, epoch_validation_prices_loss))
-
-            if log_comet:
-                experiment.log_metric('epoch_val_prices_loss', epoch_validation_prices_loss, epoch)
-        else:
-            print('0 epoch losses for validation')
-
+if 'test' in modes:
+    print('--Started testing--')
+    test(model, 30, test_loader, device, results_dir)
+    print('--Finished testing--')
 

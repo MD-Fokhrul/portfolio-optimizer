@@ -1,5 +1,4 @@
-import os
-from PIL import Image
+from datetime import datetime
 import pandas as pd
 import numpy as np
 from random import shuffle
@@ -49,6 +48,10 @@ class FuturePricesLoader(DataLoader):
                          batch_size=batch_size,
                          sampler=sampler,
                          num_workers=num_workers)
+
+    def add_day(self, day_prices):
+        self.futureprices.add_day(day_prices)
+
 
 class FuturePrices(object):
     ## takes a config json object that specifies training parameters and a
@@ -104,6 +107,7 @@ class FuturePrices(object):
         # we remove window+temporal history from start so we always have a full window
         # we remove one from the end so that target/next_prices doesn't index out of bounds
         self.indices = self.dataframe.iloc[self.past_prices_lookback_window+max_temporal_history:-1].index.tolist()
+        self.phase = phase
 
         #### phase specific manipulation #####
         if phase == 'train':
@@ -128,7 +132,7 @@ class FuturePrices(object):
             # self.dataframe['canSteering'] = np.clip(self.dataframe['canSteering'], a_max=360, a_min=-360)
 
         elif phase == 'test':
-            pass
+            self.indices = self.dataframe.iloc[self.past_prices_lookback_window+max_temporal_history:].index.tolist()
             # IMPORTANT: for the test phase indices will start 10s (100 samples) into each chapter
             # this is to allow challenge participants to experiment with different temporal settings of data input.
             # If challenge participants have a greater temporal length than 10s for each training sample, then they
@@ -170,6 +174,21 @@ class FuturePrices(object):
         }[self.normalize_targets]
         # TODO: might want to add different transforms for factor data
 
+    def add_day(self, day_prices):
+        # update dataframe with new day and new index
+        new_row = dict(zip(self.dataframe.columns, day_prices))
+        current_max_index = self.dataframe.index.max()
+        # new_index = (pd.Timestamp(current_max_index) + pd.DateOffset(days=1)).strftime('%d/%m/%Y')
+        new_index = current_max_index + 1
+        new_row_series = pd.Series(new_row, name=new_index)
+
+        self.dataframe = self.dataframe.append(new_row_series)
+
+        # update indices
+        # remove oldest index and append new one (we don't want to process first day again)
+        self.indices = self.indices[1:]
+        self.indices.append(new_index)
+
     def __getitem__(self, index):
         inputs = {}
         labels = {}
@@ -182,10 +201,13 @@ class FuturePrices(object):
             past_prices_img = self.past_prices_transform(past_prices_img)
             inputs[i]['past_prices'] = past_prices_img
 
-        next_prices = self.dataframe.iloc[index+1].to_numpy().reshape(1, -1)
-        next_prices = self.next_prices_transform(next_prices) # might need to remove reshape if we predict more than one line
+        if self.phase != 'test':
+            next_prices = self.dataframe.iloc[index+1].to_numpy().reshape(1, -1)
+            next_prices = self.next_prices_transform(next_prices) # might need to remove reshape if we predict more than one line
 
-        labels['next_prices'] = next_prices
+            labels['next_prices'] = next_prices
+        else:
+            labels['next_prices'] = np.empty((1, inputs[0]['past_prices'].shape[1]))
 
         return inputs, labels
 
