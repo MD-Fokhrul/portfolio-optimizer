@@ -81,7 +81,7 @@ print('device is: ', device)
 # END SETUP DEVICE #
 
 # SETUP DATALOADERS #
-data_loader_config = util.load_config('future_prices/config.json')
+data_loader_config = util.load_config('future_prices/lstm_config.json')
 train_loader = FuturePricesLoader(data_loader_config, 'train', batch_size, data_dir, dataset_name,
                                       days_lookback_window, num_sample_stocks,
                                       limit_days=limit_days,
