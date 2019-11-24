@@ -77,6 +77,12 @@ else:
 # SETUP RESULTS DIR #
 if 'test' in modes:
     results_dir_name = experiment.get_key() if experiment is not None else str(int(start))
+
+    if 'train' in modes and save_checkpoints:
+        results_dir_name = checkpoints_dir_name
+    elif load_model:
+        results_dir_name = '{}_{}'.format(load_model.split('/')[-2 if load_model[-1] == '/' else -1], results_dir_name)
+
     results_dir = '{}/{}'.format(results_root_dir, results_dir_name)
     os.makedirs(results_dir, exist_ok=True)
 # END SETUP RESULTS DIR #
