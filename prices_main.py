@@ -99,8 +99,12 @@ params = {
     'batch_size': batch_size,
     'epochs': epochs,
     'log_interval': log_interval,
-    'device': device_type
+    'device': device_type,
+    'train_data_shape': train_loader.data_dim,
+    'validation_data_shape': validation_loader.data_dim
 }
+
+print('running with params: {}'.format(params))
 
 if log_comet:
     experiment.log_parameters(params)
@@ -160,6 +164,7 @@ for epoch in range(0, epochs):
     if log_comet and log_epochs:
         if len(epoch_prices_losses) > 0 and len(epoch_prices_losses) > 0:
             epoch_prices_loss = sum(epoch_prices_losses) / len(epoch_prices_losses)
+            print('[avg train loss epoch %d] prices loss %.5f' % (epoch, epoch_prices_loss))
             experiment.log_metric('epoch_train_prices_loss', epoch_prices_loss, epoch)
         else:
             print('0 epoch losses for training')
