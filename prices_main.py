@@ -107,6 +107,7 @@ params = {
 print('running with params: {}'.format(params))
 
 if log_comet:
+    comet_tags.append(dataset_name)
     experiment.log_parameters(params)
     experiment.tags(comet_tags)
 
