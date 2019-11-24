@@ -17,7 +17,7 @@ def test(model, predict_days, test_loader, device, results_dir):
                         data[k][k2] = v2.float().to(device)
 
                 prediction = model(data)
-                test_loader.add_day(prediction['next_prices'].numpy())
+                test_loader.add_day(prediction['next_prices'].cpu().numpy())
 
                 if (day+1) % 5 == 0 or (day+1) == predict_days:
                     print('predicting day {}/{}...'.format(day+1, predict_days))
