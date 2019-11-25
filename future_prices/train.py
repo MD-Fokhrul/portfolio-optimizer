@@ -70,28 +70,29 @@ def train(model, lr, train_loader, validation_loader, epochs, device, save_check
         if log_comet:
             experiment.log_metric('epoch_train_time', end_epoch_train - start_epoch_train, step=epoch)
 
-        # epoch validation
-        model.eval()
-        with torch.no_grad():
-            epoch_validation_prices_losses = []
-            for batch_idx, (data, target) in enumerate(validation_loader):
-                for k, v in data.items():
-                    for k2, v2 in v.items():
-                        data[k][k2] = v2.float().to(device)
-                for k, v in target.items():
-                    target[k] = v.float().to(device)
+        if validation_loader:
+            # epoch validation
+            model.eval()
+            with torch.no_grad():
+                epoch_validation_prices_losses = []
+                for batch_idx, (data, target) in enumerate(validation_loader):
+                    for k, v in data.items():
+                        for k2, v2 in v.items():
+                            data[k][k2] = v2.float().to(device)
+                    for k, v in target.items():
+                        target[k] = v.float().to(device)
 
-                prediction = model(data)
+                    prediction = model(data)
 
-                prices_loss = criterion(prediction['next_prices'], target['next_prices'].squeeze())
+                    prices_loss = criterion(prediction['next_prices'], target['next_prices'].squeeze())
 
-                epoch_validation_prices_losses.append(prices_loss.item())
+                    epoch_validation_prices_losses.append(prices_loss.item())
 
-            if len(epoch_validation_prices_losses) > 0:
-                epoch_validation_prices_loss = sum(epoch_validation_prices_losses) / len(epoch_validation_prices_losses)
-                print('[avg validation loss epoch %d] prices loss %.5f' % (epoch, epoch_validation_prices_loss))
+                if len(epoch_validation_prices_losses) > 0:
+                    epoch_validation_prices_loss = sum(epoch_validation_prices_losses) / len(epoch_validation_prices_losses)
+                    print('[avg validation loss epoch %d] prices loss %.5f' % (epoch, epoch_validation_prices_loss))
 
-                if log_comet:
-                    experiment.log_metric('epoch_val_prices_loss', epoch_validation_prices_loss, epoch)
-            else:
-                print('0 epoch losses for validation')
+                    if log_comet:
+                        experiment.log_metric('epoch_val_prices_loss', epoch_validation_prices_loss, epoch)
+                else:
+                    print('0 epoch losses for validation')

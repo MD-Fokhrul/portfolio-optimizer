@@ -108,6 +108,9 @@ print('device is: ', device)
 val_data_dim = None
 train_data_dim = None
 test_data_dim = None
+train_loader = None
+validation_loader = None
+test_loader = None
 
 data_loader_config = util.load_config('future_prices/lstm_config.json')
 
