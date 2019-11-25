@@ -3,7 +3,6 @@ from torch import nn
 
 
 def test(model, predict_days, test_loader, device, results_dir):
-    # test_loader.add_days(predict_days)
 
     initial_data_shape = test_loader.futureprices.dataframe.shape
 

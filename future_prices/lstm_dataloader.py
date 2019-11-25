@@ -24,6 +24,9 @@ class SubsetSampler(Sampler):
     def __len__(self):
         return len(self.indices)
 
+    def update_indices(self, indices):
+        self.indices = indices
+
 
 class FuturePricesLoader(DataLoader):
 
@@ -51,6 +54,7 @@ class FuturePricesLoader(DataLoader):
 
     def add_day(self, day_prices):
         self.futureprices.add_day(day_prices)
+        self.sampler.update_indices(self.futureprices.indices)
 
 
 class FuturePrices(object):
