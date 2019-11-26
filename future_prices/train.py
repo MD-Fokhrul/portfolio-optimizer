@@ -63,7 +63,7 @@ def train(model, lr, train_loader, validation_loader, epochs, device, save_check
 
         if save_checkpoints and (epoch+1) % checkpoints_interval == 0:
             print('Saving interim model...')
-            model_path = '{}/model_{}.pth'.format(checkpoints_dir, epoch)
+            model_path = '{}/model_{}.pth'.format(checkpoints_dir, epoch+1)
             torch.save(model.state_dict(), model_path)
 
         print('epoch %d: %f elapsed' % (epoch+1, epoch_elapsed))

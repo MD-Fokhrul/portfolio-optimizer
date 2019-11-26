@@ -36,6 +36,7 @@ class PricePredictionModel(nn.Module):
             nn.Linear(hidden_size, int(hidden_size / 2)),
             nn.ReLU(),
             nn.Linear(int(hidden_size / 2), input_output_size)
+            # nn.Tanh() TODO: try with tanh?
         )
 
     def forward(self, data_input):
