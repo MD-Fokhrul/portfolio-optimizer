@@ -13,7 +13,10 @@ class DatasetLoader():
     def get_data(self, num_cols_sample=None, limit_days=None, exclude_days=None,
                  test_split_days=0, random_state=1, as_numpy=True, plot=False, dropna=True):
 
-        data_ret = self.data_df.drop(['Date'], axis=1) # we don't need date col
+        data_ret = self.data_df
+
+        if 'Date' in data_ret:
+            data_ret = self.data_df.drop(['Date'], axis=1) # we don't need date col
 
         if limit_days:
             # limit to latest n days
