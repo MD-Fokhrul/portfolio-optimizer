@@ -5,7 +5,7 @@ from dataset.util import plot_stocks
 class DatasetLoader():
     def __init__(self, data_dir, dataset_name):
         dataset_path = '%s/%s.csv' % (data_dir, dataset_name)
-        self.data_df = pd.read_csv(dataset_path)
+        self.data_df = pd.read_csv(dataset_path, index_col=0)
 
     # get dataframe or numpy array.
     # can sample number of stocks (columns) and limit number of days (rows).
