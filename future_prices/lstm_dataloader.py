@@ -110,7 +110,7 @@ class FuturePrices(object):
 
         # we remove window+temporal history from start so we always have a full window
         # we remove one from the end so that target/next_prices doesn't index out of bounds
-        self.indices = self.dataframe.iloc[self.past_prices_lookback_window+max_temporal_history:-1].index.tolist()
+        self.indices = self.dataframe.iloc[self.past_prices_lookback_window+max_temporal_history:-2].index.tolist()
         self.phase = phase
 
         #### phase specific manipulation #####
