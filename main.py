@@ -100,7 +100,7 @@ train_data, test_data, train_stocks_plot_fig, test_stocks_plot_fig = dataloader.
                                        limit_days=limit_days,
                                        test_split_days=test_split_days,
                                        as_numpy=True,
-                                       plot=True)
+                                       plot=False)
 
 # save plot of stock prices in selected stock sample and day range
 train_stocks_plot_fig.savefig('train_stocks_plot.png')
