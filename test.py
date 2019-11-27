@@ -5,11 +5,11 @@ from env.util import plot_portfolio
 import imageio
 
 
-def test(data, agent, total_shares, log_interval_steps, log_comet, experiment, visualize_portfolio=False):
+def test(data, agent, log_interval_steps, log_comet, experiment, visualize_portfolio=False):
     # TODO: keep learning during test?
     num_days = data.shape[0]
 
-    env = PortfolioEnv(data, total_shares)
+    env = PortfolioEnv(data)
     agent.is_training = False
 
     current_state = env.reset()

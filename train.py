@@ -3,12 +3,12 @@ from collections import defaultdict
 import util
 
 
-def train(data, agent, total_shares, num_episodes, limit_iterations, num_warmup_iterations,
+def train(data, agent, num_episodes, limit_iterations, num_warmup_iterations,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir, save_checkpoints):
     num_days = data.shape[0]
 
     # init custom OpenAI gym env for stocks portfolio
-    env = PortfolioEnv(data, total_shares)
+    env = PortfolioEnv(data)
 
     # training
     total_iterations_counter = 0 # counter for total iterations. num_episodes * num_days

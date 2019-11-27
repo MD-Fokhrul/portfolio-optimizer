@@ -11,7 +11,6 @@ parser.add_argument('--dataset_name', type=str, default='sp500', help='dataset n
 parser.add_argument('--data_dir', type=str, default='data', help='data directory')
 parser.add_argument('--test_split_days', type=int, default=152, help='number of days to set as test data')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
-parser.add_argument('--total_shares', type=int, default=100000, help='total shares')
 parser.add_argument('--episodes', type=int, default=20, help='number of training episodes')
 parser.add_argument('--limit_days', type=int, help='limit days (steps per episode)')
 parser.add_argument('--limit_iters', type=int, help='limit total iterations - for debugging')
@@ -37,7 +36,6 @@ args = parser.parse_args()
 
 # SET VARS #
 log_comet = args.log_comet
-total_shares = args.total_shares
 num_episodes = args.episodes
 num_sample_stocks = args.num_sample_stocks
 num_warmup_iterations = args.warmup_iters
@@ -111,7 +109,6 @@ if plot_stocks: # works with absolute stock prices not percent change
         test_stocks_plot_fig.savefig('test_stocks_plot.png')
 
 params = {
-    'total_shares': total_shares,
     'num_episodes': num_episodes,
     'num_warmup_iterations': num_warmup_iterations,
     'minibatch_size': minibatch_size,
@@ -147,11 +144,11 @@ if load_model is not None:
     agent.load_model(load_model)
 
 if 'train' in modes:
-    train(train_data, agent, total_shares, num_episodes, limit_iterations, num_warmup_iterations,
+    train(train_data, agent, num_episodes, limit_iterations, num_warmup_iterations,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir, save_checkpoints)
 
 if 'test' in modes:
-    test(test_data, agent, total_shares, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
+    test(test_data, agent, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
 
 # logging
 if log_comet:

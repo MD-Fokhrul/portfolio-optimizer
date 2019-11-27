@@ -6,7 +6,7 @@ from env.util import calculate_volatility
 
 # OpenAI gym wrapper for environment class for portfolio
 class PortfolioEnv(gym.Env):
-    def __init__(self, data, total_shares, volatiltiy_lookback=30):
+    def __init__(self, data, volatiltiy_lookback=30):
         super(PortfolioEnv, self).__init__()
 
         # init data
@@ -22,8 +22,6 @@ class PortfolioEnv(gym.Env):
         self.observation_space = gym.spaces.Box(low=0, high=np.inf, shape=(self.num_stocks,), dtype=np.float16)
 
         # init fields
-        self.total_shares = total_shares
-
         self.current_step = None
         self.reward = None
         self.portfolio = None
@@ -39,7 +37,6 @@ class PortfolioEnv(gym.Env):
         self.current_step = 0
         self.reward = 0
         self.portfolio = Portfolio(
-            total_shares=self.total_shares,
             positions_price=self._init_prices(),
             positions_quantity=self._init_positions()
         )
