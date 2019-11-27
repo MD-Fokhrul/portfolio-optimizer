@@ -5,22 +5,15 @@ import random
 class Portfolio:
     def __init__(self,
                  # BASICS: INPUTS ANY PORTFOLIO NEEDS
-                 total_shares,
                  positions_price,
-                 positions_quantity):
+                 positions_weights):
 
         self.stock_p = positions_price
-        self.stock_q = positions_quantity
-        self.stock_q[-1] = total_shares
+        self.stock_w = positions_weights
         self.volatility = np.ones(positions_price.shape)
 
-    # get the current weights of the portfolio's holdings.
-    # a stock's weight is the holding's portion of the total net worth: (stock price * quantity held) / net worth
-    def curr_weights(self):
-        return self.stock_q / self.shares_held()
-
     def curr_gains(self):
-        return self.stock_q * self.stock_p
+        return self.stock_w * self.stock_p
 
     # weights' sum should be in [0,1] range
     def weight_constraints(self):
@@ -28,7 +21,10 @@ class Portfolio:
 
     # total quantity of shares held
     def shares_held(self):
-        return np.sum(self.stock_q)
+        return np.sum(self.stock_w[:-1])
+
+    def cash_held(self):
+        return self.stock_w[-1]
 
     # update stock prices
     def update_p(self, stock_p):
@@ -51,7 +47,7 @@ class Portfolio:
             print(np.sum(weights))
             raise Exception("This allocation is beyond the range permitted")
 
-        self.stock_q = np.floor(weights * self.shares_held())
+        self.stock_w = weights
 
 
 

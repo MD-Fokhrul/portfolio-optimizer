@@ -87,7 +87,7 @@ class PortfolioEnv(gym.Env):
     def render(self, close=False):
         # Render the environment to the screen
         print('Step: {}'.format(self.current_step))
-        print('Total holdings: {:.2f}'.format(np.sum(self.portfolio.stock_q)))
+        print('Total holdings: {:.2f} | cash: {:.2f} | total: {:.2f}'.format(self.portfolio.shares_held(), self.portfolio.cash_held(), np.sum(self.portfolio.stock_w)))
         print('Shares held: {}'.format(self.portfolio.shares_held()))
         print('Current step gains: {:.2f} | volatility: {:.2f}'.format(self.current_gains, self.current_volatility))
         print('Total ongoing gains: {:.2f}'.format(self.total_gains))

@@ -27,7 +27,7 @@ def calculate_volatility(data, current_step, lookback):
 def plot_portfolio(portfolio, total_gains, title=None, dims=(15.24, 5.12), holdings_portion=0.75):
     holdings_dims = (dims[0] * holdings_portion, dims[1])
     meta_dims = (dims[0] * (1.0 - holdings_portion), dims[1])
-    holdings_plot_img = plot_holdings(portfolio.stock_q, dims=holdings_dims, title=title)
+    holdings_plot_img = plot_holdings(portfolio.stock_w, dims=holdings_dims, title=title)
     meta_plot_img = plot_portfolio_meta(portfolio, total_gains, dims=meta_dims)
 
     return concat_images([holdings_plot_img, meta_plot_img])
@@ -46,9 +46,9 @@ def plot_portfolio_meta(portfolio, total_gains, dims, y_limit=15000):
     return fig_to_img(fig)
 
   
-def plot_holdings(stock_q, dims, title=None, y_limit=100):
-    x = np.array(range(stock_q.shape[0]))
-    y = stock_q.squeeze()
+def plot_holdings(stock_w, dims, title=None, y_limit=100):
+    x = np.array(range(stock_w.shape[0]))
+    y = stock_w.squeeze()
 
     plt.figure()
     fig = sns.barplot(x=x, y=y).get_figure()
