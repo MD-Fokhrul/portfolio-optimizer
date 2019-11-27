@@ -52,7 +52,7 @@ class PortfolioEnv(gym.Env):
         new_volatility = self._get_step_volatility()
         self.portfolio.update_v(new_volatility)
         self.portfolio.update_p(new_stock_p)
-        return self.portfolio.curr_weights()
+        return self.portfolio.stock_w
 
     # step and take an action.
     # input: action - an n sized vector of weights
