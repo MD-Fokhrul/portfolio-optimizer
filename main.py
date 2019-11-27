@@ -18,6 +18,7 @@ parser.add_argument('--num_sample_stocks', type=int, help='number of stocks to s
 parser.add_argument('--discount_factor', type=float, default=0.9, help='ddpg discount factor')
 parser.add_argument('--minibatch_size', type=int, default=8, help='ddpg minibatch size')
 parser.add_argument('--warmup_iters', type=int, default=10, help='number of ddpg steps to warm up with a random action')
+parser.add_argument('--vol_lookback', type=int, default=90, help='volatility lookback window in days')
 parser.add_argument('--random_process_theta', type=float, default=0.5, help='Random process theta')
 parser.add_argument('--log_interval', type=int, default=20, help='steps interval for print and comet logging')
 parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
@@ -49,6 +50,7 @@ dataset_name = args.dataset_name
 random_process_args = {
     'theta': args.random_process_theta
 }
+vol_lookback = args.vol_lookback
 force_cpu = args.force_cpu
 limit_iterations = args.limit_iters
 limit_days = args.limit_days
@@ -150,14 +152,14 @@ if load_model is not None:
     agent.load_model(load_model)
 
 if 'train' in modes:
-    train(train_data_df, agent, num_episodes, limit_iterations, num_warmup_iterations,
+    train(train_data_df, agent, num_episodes, limit_iterations, num_warmup_iterations, vol_lookback,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir, save_checkpoints)
 
 if 'test' in modes:
     # test(test_data, agent, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
 
     # we still want to train
-    train(test_data_df, agent, 1, limit_iterations, num_warmup_iterations,
+    train(test_data_df, agent, 1, limit_iterations, num_warmup_iterations, vol_lookback,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir,
           save_checkpoints=False, is_test=True, results_dir=results_dir)
 

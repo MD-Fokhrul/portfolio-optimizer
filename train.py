@@ -3,7 +3,7 @@ from env.portfolio_env import PortfolioEnv
 import util
 
 
-def train(data_df, agent, num_episodes, limit_iterations, num_warmup_iterations,
+def train(data_df, agent, num_episodes, limit_iterations, num_warmup_iterations, volatility_lookback,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval,
           checkpoints_dir, save_checkpoints, is_test=False, results_dir=None):
 
@@ -15,7 +15,7 @@ def train(data_df, agent, num_episodes, limit_iterations, num_warmup_iterations,
     num_days = data.shape[0]
 
     # init custom OpenAI gym env for stocks portfolio
-    env = PortfolioEnv(data)
+    env = PortfolioEnv(data, volatiltiy_lookback=volatility_lookback)
 
     output = []
 
