@@ -28,7 +28,6 @@ def train(data, agent, total_shares, num_episodes, limit_iterations, num_warmup_
             else:
                 # regular training. Let agent select action based on observation
                 current_action = agent.select_action(current_state)
-                print(current_action)
 
             # execute action on environment, observe new state and reward
             next_state, current_reward, done, _ = env.step(current_action)
