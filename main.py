@@ -31,6 +31,7 @@ parser.add_argument('--checkpoints_root_dir', type=str, default='checkpoints', h
 parser.add_argument('--save_checkpoints', type=util.str2bool, nargs='?', const=True, default=False, help='should save checkpoints?')
 parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
 parser.add_argument('--modes', nargs='+', default=['train'], help='train and/or test')
+parser.add_argument('--plot_stocks', type=util.str2bool, nargs='?', const=True, default=False, help='should plot stocks?')
 args = parser.parse_args()
 # END CLI ARG PARSE #
 
@@ -61,6 +62,7 @@ checkpoints_root_dir = args.checkpoints_root_dir
 save_checkpoints = args.save_checkpoints
 load_model = args.load_model
 modes = args.modes
+plot_stocks = args.plot_stocks
 # END SET VARS #
 
 if len(modes) == 0 or len([x for x in modes if x not in ['train', 'test']]):
@@ -100,12 +102,13 @@ train_data, test_data, train_stocks_plot_fig, test_stocks_plot_fig = dataloader.
                                        limit_days=limit_days,
                                        test_split_days=test_split_days,
                                        as_numpy=True,
-                                       plot=False)
+                                       plot=plot_stocks)
 
-# save plot of stock prices in selected stock sample and day range
-train_stocks_plot_fig.savefig('train_stocks_plot.png')
-if test_stocks_plot_fig is not None:
-    test_stocks_plot_fig.savefig('test_stocks_plot.png')
+if plot_stocks: # works with absolute stock prices not percent change
+    # save plot of stock prices in selected stock sample and day range
+    train_stocks_plot_fig.savefig('train_stocks_plot.png')
+    if test_stocks_plot_fig is not None:
+        test_stocks_plot_fig.savefig('test_stocks_plot.png')
 
 params = {
     'total_shares': total_shares,
