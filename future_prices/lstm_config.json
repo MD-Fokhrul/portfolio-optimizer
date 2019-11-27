@@ -1,0 +1,47 @@
+{
+    "cuda": {
+        "use": true
+    },
+    "front": true,
+    "tomtom": false,
+    "here": {
+        "number": 1,
+        "frequency": 1,
+        "groups": [1,2,3,4,5,6]
+    },
+    "data_loader": {
+        "historic":{
+            "number": 2,
+            "frequency": 1
+        },
+        "data_dir": "./data_sample3/",
+        "train":{
+            "shuffle": true,
+            "num_workers": 8
+        },
+        "validation": {
+            "shuffle": true,
+            "num_workers": 8
+        },
+        "test": {
+            "shuffle": false,
+            "num_workers": 1
+        }
+    },
+    "target":{
+        "normalize": false,
+        "mean": {"next_prices": 97.75079273870783},
+        "std": {"next_prices": 18.99081616210492}
+    },
+    "image": {
+        "normalize": false,
+        "norm": {
+            "mean": [
+                97.75079273870783
+            ],
+            "std": [
+                18.99081616210492
+            ]
+        }
+    }
+}

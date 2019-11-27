@@ -1,5 +1,6 @@
 # PRELIMINARY IMPORTS #
 import util
+import time
 from collections import defaultdict
 # END PRELIMINARY IMPORTS #
 
@@ -8,7 +9,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset_name', type=str, default='sp500', help='dataset name')
 parser.add_argument('--data_dir', type=str, default='data', help='data directory')
-parser.add_argument('--test_split', type=float, default=0.2, help='portion of days to set as test data')
+parser.add_argument('--test_split_days', type=int, default=152, help='number of days to set as test data')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 parser.add_argument('--init_cash', type=int, default=10000, help='initial cash')
 parser.add_argument('--episodes', type=int, default=20, help='number of training episodes')
@@ -24,6 +25,11 @@ parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, de
 parser.add_argument('--comet_log_level', type=str, default='episode', help='[interval, episode]')
 parser.add_argument('--comet_tags', nargs='+', default=[], help='tags for comet logging')
 parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, default=False, help='should force cpu even if cuda is available')
+parser.add_argument('--visualize_portfolio', type=util.str2bool, nargs='?', const=True, default=True, help='should create portfolio visualization gif?')
+parser.add_argument('--checkpoints_interval', type=int, default=50, help='episodes interval for saving model checkpoint')
+parser.add_argument('--checkpoints_root_dir', type=str, default='checkpoints', help='checkpoint root directory')
+parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
+parser.add_argument('--modes', nargs='+', default=['train', 'test'], help='train and/or test')
 args = parser.parse_args()
 # END CLI ARG PARSE #
 
@@ -37,7 +43,7 @@ minibatch_size = args.minibatch_size
 learning_rate = args.lr
 discount_factor = args.discount_factor
 data_dir = args.data_dir
-test_split = args.test_split
+test_split_days = args.test_split_days
 dataset_name = args.dataset_name
 random_process_args = {
     'theta': args.random_process_theta
@@ -48,7 +54,16 @@ limit_days = args.limit_days
 log_interval_steps = args.log_interval
 comet_tags = args.comet_tags + [dataset_name]
 comet_log_level = args.comet_log_level
+visualize_portfolio = args.visualize_portfolio
+checkpoints_interval = args.checkpoints_interval
+checkpoints_root_dir = args.checkpoints_root_dir
+load_model = args.load_model
+modes = args.modes
 # END SET VARS #
+
+if len(modes) == 0 or len([x for x in modes if x not in ['train', 'test']]):
+    print('please provide train or test modes')
+    exit(1)
 
 # OPTIONAL COMET DATA LOGGING SETUP #
 experiment = None
@@ -59,6 +74,9 @@ if log_comet:
                             project_name=config['comet']['project_name'],
                             workspace=config['comet']['workspace'])
 # END OPTIONAL COMET DATA LOGGING SETUP #
+
+checkpoints_dir_name = experiment.get_key() if experiment is not None else str(int(time.time()))
+checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, checkpoints_dir_name)
 
 # ADDITIONAL IMPORTS # - imports are split because comet_ml requires being imported before torch
 from dataset.dataset_loader import DatasetLoader
@@ -76,7 +94,7 @@ dataloader = DatasetLoader(data_dir, dataset_name)
 train_data, test_data, train_stocks_plot_fig, test_stocks_plot_fig = dataloader.get_data(
                                        num_cols_sample=num_sample_stocks,
                                        limit_days=limit_days,
-                                       test_split=test_split,
+                                       test_split_days=test_split_days,
                                        as_numpy=True,
                                        plot=True)
 
@@ -117,10 +135,15 @@ agent = DDPG(num_states_and_actions, num_states_and_actions, minibatch_size, ran
              learning_rate=learning_rate, discount_factor=discount_factor,
              device_type=device_type, is_training=True)
 
-train(train_data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
-      log_interval_steps, log_comet, comet_log_level, experiment)
+if load_model is not None:
+    agent.load_model(load_model)
 
-test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment)
+if 'train' in modes:
+    train(train_data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
+          log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir)
+
+if 'test' in modes:
+    test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
 
 # logging
 if log_comet:

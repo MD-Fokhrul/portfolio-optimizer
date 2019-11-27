@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+import os
+import pickle
 
 
 # for initializing nn weights
@@ -37,5 +39,32 @@ def determine_device(force_cpu=False):
         return 'cuda'
     else:
         return 'cpu'
+
+
+def save_model(dir_path, actor, critic, replay_buffer, identifier):
+    model_dir_path = '{}/{}'.format(dir_path, identifier)
+    os.makedirs(model_dir_path, exist_ok=True)
+
+    torch.save(actor.state_dict(), '{}/actor.pth'.format(model_dir_path))
+    torch.save(critic.state_dict(), '{}/critic.pth'.format(model_dir_path))
+
+    with open('{}/replay_buffer.pickle'.format(model_dir_path), 'wb') as file:
+        pickle.dump(replay_buffer.buffer_map, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def load_model(model_dir_path, actor, critic, replay_buffer):
+    actor.load_state_dict(torch.load('{}/actor.pth'.format(model_dir_path)))
+    critic.load_state_dict(torch.load('{}/critic.pth'.format(model_dir_path)))
+
+    with open('{}/replay_buffer.pickle'.format(model_dir_path), 'rb') as file:
+        replay_buffer.buffer_map = pickle.load(file)
+
+
+
+
+
+
+
+
 
 
