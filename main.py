@@ -11,7 +11,7 @@ parser.add_argument('--dataset_name', type=str, default='sp500', help='dataset n
 parser.add_argument('--data_dir', type=str, default='data', help='data directory')
 parser.add_argument('--test_split_days', type=int, default=152, help='number of days to set as test data')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
-parser.add_argument('--init_cash', type=int, default=10000, help='initial cash')
+parser.add_argument('--total_shares', type=int, default=100000, help='total shares')
 parser.add_argument('--episodes', type=int, default=20, help='number of training episodes')
 parser.add_argument('--limit_days', type=int, help='limit days (steps per episode)')
 parser.add_argument('--limit_iters', type=int, help='limit total iterations - for debugging')
@@ -28,14 +28,15 @@ parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, de
 parser.add_argument('--visualize_portfolio', type=util.str2bool, nargs='?', const=True, default=True, help='should create portfolio visualization gif?')
 parser.add_argument('--checkpoints_interval', type=int, default=50, help='episodes interval for saving model checkpoint')
 parser.add_argument('--checkpoints_root_dir', type=str, default='checkpoints', help='checkpoint root directory')
+parser.add_argument('--save_checkpoints', type=util.str2bool, nargs='?', const=True, default=False, help='should save checkpoints?')
 parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
-parser.add_argument('--modes', nargs='+', default=['train', 'test'], help='train and/or test')
+parser.add_argument('--modes', nargs='+', default=['train'], help='train and/or test')
 args = parser.parse_args()
 # END CLI ARG PARSE #
 
 # SET VARS #
 log_comet = args.log_comet
-init_cash = args.init_cash
+total_shares = args.total_shares
 num_episodes = args.episodes
 num_sample_stocks = args.num_sample_stocks
 num_warmup_iterations = args.warmup_iters
@@ -57,6 +58,7 @@ comet_log_level = args.comet_log_level
 visualize_portfolio = args.visualize_portfolio
 checkpoints_interval = args.checkpoints_interval
 checkpoints_root_dir = args.checkpoints_root_dir
+save_checkpoints = args.save_checkpoints
 load_model = args.load_model
 modes = args.modes
 # END SET VARS #
@@ -75,8 +77,10 @@ if log_comet:
                             workspace=config['comet']['workspace'])
 # END OPTIONAL COMET DATA LOGGING SETUP #
 
-checkpoints_dir_name = experiment.get_key() if experiment is not None else str(int(time.time()))
-checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, checkpoints_dir_name)
+checkpoints_dir = None
+if save_checkpoints:
+    checkpoints_dir_name = experiment.get_key() if experiment is not None else str(int(time.time()))
+    checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, checkpoints_dir_name)
 
 # ADDITIONAL IMPORTS # - imports are split because comet_ml requires being imported before torch
 from dataset.dataset_loader import DatasetLoader
@@ -104,7 +108,7 @@ if test_stocks_plot_fig is not None:
     test_stocks_plot_fig.savefig('test_stocks_plot.png')
 
 params = {
-    'init_cash': init_cash,
+    'total_shares': total_shares,
     'num_episodes': num_episodes,
     'num_warmup_iterations': num_warmup_iterations,
     'minibatch_size': minibatch_size,
@@ -128,7 +132,7 @@ if log_comet:
     experiment.add_tags(comet_tags)
 
 num_stocks = train_data.shape[1]
-num_states_and_actions = num_stocks + 1 # adding one to account for weight of cash in our portfolio
+num_states_and_actions = num_stocks
 
 # init DDPG agent
 agent = DDPG(num_states_and_actions, num_states_and_actions, minibatch_size, random_process_args,
@@ -139,11 +143,11 @@ if load_model is not None:
     agent.load_model(load_model)
 
 if 'train' in modes:
-    train(train_data, agent, init_cash, num_episodes, limit_iterations, num_warmup_iterations,
-          log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir)
+    train(train_data, agent, total_shares, num_episodes, limit_iterations, num_warmup_iterations,
+          log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir, save_checkpoints)
 
 if 'test' in modes:
-    test(test_data, agent, init_cash, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
+    test(test_data, agent, total_shares, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
 
 # logging
 if log_comet:

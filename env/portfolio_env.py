@@ -6,28 +6,30 @@ from env.util import calculate_volatility
 
 # OpenAI gym wrapper for environment class for portfolio
 class PortfolioEnv(gym.Env):
-    def __init__(self, data, init_cash, volatiltiy_lookback=30):
+    def __init__(self, data, total_shares, volatiltiy_lookback=30):
         super(PortfolioEnv, self).__init__()
 
         # init data
         self.data = data # daily stock prices
-        self.init_cash = init_cash # cash we start with
-        self.volatility_lookback =  volatiltiy_lookback # days lookback window for volatility
+        self.volatility_lookback = volatiltiy_lookback # days lookback window for volatility
         self.max_steps = data.shape[0]
-        self.num_shares = data.shape[1]
+        self.num_stocks = data.shape[1]
 
         # init spaces
         # actions are n sized vectors of weights in the range [0,1]
-        self.action_space = gym.spaces.Box(low=0, high=1, shape=(self.num_shares,), dtype=np.float16)
+        self.action_space = gym.spaces.Box(low=0, high=1, shape=(self.num_stocks,), dtype=np.float16)
         # states are n sized vectors of weights in the range [0,1] as well
-        self.observation_space = gym.spaces.Box(low=0, high=np.inf, shape=(self.num_shares,), dtype=np.float16)
+        self.observation_space = gym.spaces.Box(low=0, high=np.inf, shape=(self.num_stocks,), dtype=np.float16)
 
         # init fields
+        self.total_shares = total_shares
+
         self.current_step = None
         self.reward = None
         self.portfolio = None
-        self.current_purchase_power = None
-        self.max_purchase_power = None
+        self.current_gains = None
+        self.current_volatility = None
+        self.total_gains = None
         # init portfolio
         self.reset()
 
@@ -37,12 +39,13 @@ class PortfolioEnv(gym.Env):
         self.current_step = 0
         self.reward = 0
         self.portfolio = Portfolio(
-            init_cash=self.init_cash,
+            total_shares=self.total_shares,
             positions_price=self._init_prices(),
             positions_quantity=self._init_positions()
         )
-        self.current_purchase_power = 0
-        self.max_purchase_power = 0
+        self.current_gains = 0
+        self.total_gains = 0
+        self.current_volatility = 0
 
         return self._next_observation()
 
@@ -62,21 +65,19 @@ class PortfolioEnv(gym.Env):
     # output: empty info - not needed
     def step(self, action):
         # Execute one time step within the environment
-        prev_purchase_power = self.portfolio.purchase_power()
 
         self._take_action(action)
         self.current_step += 1
 
-        # TODO: do we also need this: done = self.portfolio.cash <= 0?
         done = (self.current_step + 1) == self.max_steps
         obs = self._next_observation()
 
+        self.current_gains = np.sum(self.portfolio.curr_gains())
+        self.total_gains += self.current_gains
+        self.current_volatility = np.sum(self.portfolio.volatility)
+
         # calculate reward: new net worth - old net worth
-        new_purchase_power = self.portfolio.purchase_power()
-        self.max_purchase_power = max(self.max_purchase_power, new_purchase_power)
-        self.current_purchase_power = new_purchase_power
-        gain = new_purchase_power - prev_purchase_power
-        reward = gain / np.sum(self.portfolio.volatility) # gain / volatility is our reward
+        reward = self.current_gains / self.current_volatility # gain / volatility is our reward
 
         return obs, reward, done, {}
 
@@ -85,14 +86,11 @@ class PortfolioEnv(gym.Env):
 
     def render(self, close=False):
         # Render the environment to the screen
-        current_purchase_power = self.portfolio.purchase_power()
-        profit = current_purchase_power - self.init_cash
-        max_profit = self.max_purchase_power - self.init_cash
-        print('Step: %d' % self.current_step)
-        print('Cash: %2f, total equity value: %2f' % (self.portfolio.cash, np.sum(self.portfolio.equity_val())))
-        print('Shares held: %d, avg cost for held shares: %2f' % (self.portfolio.shares_held(), self.portfolio.cost_basis()))
-        print('Net worth: %2f (Max net worth: %2f)' % (current_purchase_power, self.max_purchase_power))
-        print('Profit: %2f (Max profit: %2f)' % (profit, max_profit))
+        print('Step: {}'.format(self.current_step))
+        print('Total holdings: {:.2f}'.format(np.sum(self.portfolio.stock_q)))
+        print('Shares held: {}'.format(self.portfolio.shares_held()))
+        print('Current step gains: {:.2f} | volatility: {:.2f}'.format(self.current_gains, self.current_volatility))
+        print('Total ongoing gains: {:.2f}'.format(self.total_gains))
 
     # return stock prices for current step
     def _get_step_prices(self):
@@ -108,7 +106,7 @@ class PortfolioEnv(gym.Env):
 
     # initialize np array of type dtype
     def _init_arr(self, dtype):
-        return np.zeros((self.num_shares), dtype=dtype)
+        return np.zeros(self.num_stocks, dtype=dtype)
 
     def _get_step_volatility(self):
         return calculate_volatility(self.data, self.current_step, self.volatility_lookback)

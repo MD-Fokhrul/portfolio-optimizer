@@ -30,7 +30,10 @@ class DatasetLoader():
 
         if num_cols_sample:
             # sample columns/stocks
+            cash_col = data_ret['CASH']
+            data_ret = data_ret.drop('CASH', axis=1)
             data_ret = data_ret.sample(num_cols_sample, axis=1, random_state=random_state)
+            data_ret['CASH'] = cash_col
 
         # we want the first (1-test_split) rows as training data and the next test_split rows as test data
         num_rows_data = data_ret.shape[0]

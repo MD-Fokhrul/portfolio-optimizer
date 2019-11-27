@@ -96,9 +96,12 @@ class DDPG():
 
         action = self.actor(state) # have policy determine action
 
+        # add noise to action and clip weights to help the agent explore more actions (if training)
+        action_res = action.detach().numpy() + noise
+
         # TODO: better to normalize to 0-1 instead of clipping?
-        # add noise to action and clip weights to help the agent explore more actions
-        return np.clip(action.detach().numpy() + noise, 0, 1)
+        # return np.clip(action_res, 0, 1)
+        return action_res / np.sum(action_res)
 
     # get random noise for action from random_process
     def action_noise(self):
