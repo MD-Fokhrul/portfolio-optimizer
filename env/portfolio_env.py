@@ -38,7 +38,7 @@ class PortfolioEnv(gym.Env):
         self.reward = 0
         self.portfolio = Portfolio(
             positions_price=self._init_prices(),
-            positions_quantity=self._init_positions()
+            positions_weights=self._init_weights()
         )
         self.current_gains = 0
         self.total_gains = 0
@@ -98,8 +98,8 @@ class PortfolioEnv(gym.Env):
         return self._init_arr(dtype=float)
 
     # initialize quantity vector
-    def _init_positions(self):
-        return self._init_arr(dtype=int)
+    def _init_weights(self):
+        return self._init_arr(dtype=float)
 
     # initialize np array of type dtype
     def _init_arr(self, dtype):
