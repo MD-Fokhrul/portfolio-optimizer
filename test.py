@@ -39,7 +39,7 @@ def test(data, agent, log_interval_steps, log_comet, experiment, visualize_portf
             avg_gains = util.avg_results(results, 'current_gains', lookback=log_interval_steps)
             total_gains = env.total_gains
 
-            print('Test: step: %d | reward: {:.2f} | avg vol: {:.2f} | avg_step_gains: {:.2f} | total_gains: {:.2f}'
+            print('Test: step: %d | avg_reward: {:.5f} | avg vol: {:.2f} | avg_step_gains: {:.2f} | total_gains: {:.2f}'
                   .format(t, avg_reward, avg_vol, avg_gains, total_gains))
 
             env.render()

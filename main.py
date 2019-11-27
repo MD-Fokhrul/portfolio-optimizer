@@ -27,6 +27,7 @@ parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, de
 parser.add_argument('--visualize_portfolio', type=util.str2bool, nargs='?', const=True, default=True, help='should create portfolio visualization gif?')
 parser.add_argument('--checkpoints_interval', type=int, default=50, help='episodes interval for saving model checkpoint')
 parser.add_argument('--checkpoints_root_dir', type=str, default='checkpoints', help='checkpoint root directory')
+parser.add_argument('--results_root_dir', type=str, default='results', help='results root directory')
 parser.add_argument('--save_checkpoints', type=util.str2bool, nargs='?', const=True, default=False, help='should save checkpoints?')
 parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
 parser.add_argument('--modes', nargs='+', default=['train'], help='train and/or test')
@@ -57,6 +58,7 @@ comet_log_level = args.comet_log_level
 visualize_portfolio = args.visualize_portfolio
 checkpoints_interval = args.checkpoints_interval
 checkpoints_root_dir = args.checkpoints_root_dir
+results_root_dir = args.results_root_dir
 save_checkpoints = args.save_checkpoints
 load_model = args.load_model
 modes = args.modes
@@ -77,10 +79,14 @@ if log_comet:
                             workspace=config['comet']['workspace'])
 # END OPTIONAL COMET DATA LOGGING SETUP #
 
+dir_name = experiment.get_key() if experiment is not None else str(int(time.time()))
+
 checkpoints_dir = None
 if save_checkpoints:
-    checkpoints_dir_name = experiment.get_key() if experiment is not None else str(int(time.time()))
-    checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, checkpoints_dir_name)
+    checkpoints_dir = '{}/{}'.format(checkpoints_root_dir, dir_name)
+
+if 'test' in modes:
+    results_dir = '{}/{}'.format(results_root_dir, dir_name)
 
 # ADDITIONAL IMPORTS # - imports are split because comet_ml requires being imported before torch
 from dataset.dataset_loader import DatasetLoader
@@ -95,11 +101,11 @@ device_type = determine_device(force_cpu=force_cpu)
 
 # load data
 dataloader = DatasetLoader(data_dir, dataset_name)
-train_data, test_data, train_stocks_plot_fig, test_stocks_plot_fig = dataloader.get_data(
+train_data_df, test_data_df, train_stocks_plot_fig, test_stocks_plot_fig = dataloader.get_data(
                                        num_cols_sample=num_sample_stocks,
                                        limit_days=limit_days,
                                        test_split_days=test_split_days,
-                                       as_numpy=True,
+                                       as_numpy=False,
                                        plot=plot_stocks)
 
 if plot_stocks: # works with absolute stock prices not percent change
@@ -116,8 +122,8 @@ params = {
     'discount_factor': discount_factor,
     'random_process_theta': random_process_args['theta'],
     'log_interval_steps': log_interval_steps,
-    'train_data_shape': train_data.shape,
-    'test_data_shape': test_data.shape,
+    'train_data_shape': train_data_df.shape,
+    'test_data_shape': test_data_df.shape,
     'dataset_name': dataset_name,
     'device_type': device_type
 }
@@ -132,7 +138,7 @@ if log_comet:
         if test_stocks_plot_fig is not None:
             experiment.log_image('test_stocks_plot.png', 'test_window_stocks')
 
-num_stocks = train_data.shape[1]
+num_stocks = train_data_df.shape[1]
 num_states_and_actions = num_stocks
 
 # init DDPG agent
@@ -144,11 +150,16 @@ if load_model is not None:
     agent.load_model(load_model)
 
 if 'train' in modes:
-    train(train_data, agent, num_episodes, limit_iterations, num_warmup_iterations,
+    train(train_data_df, agent, num_episodes, limit_iterations, num_warmup_iterations,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir, save_checkpoints)
 
 if 'test' in modes:
-    test(test_data, agent, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
+    # test(test_data, agent, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
+
+    # we still want to train
+    train(test_data_df, agent, 1, limit_iterations, num_warmup_iterations,
+          log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir,
+          save_checkpoints=False, is_test=True, results_dir=results_dir)
 
 # logging
 if log_comet:

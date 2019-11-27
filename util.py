@@ -1,5 +1,7 @@
+import os
 import argparse
 import json
+import pandas as pd
 
 
 # load config file
@@ -26,3 +28,8 @@ def avg_results(results, key, lookback=None):
         consider = consider[-lookback:]
 
     return sum(consider) / len(consider)
+
+
+def save_weights(weights_list, columns, results_dir):
+    os.makedirs(results_dir, exist_ok=True)
+    pd.DataFrame(weights_list, columns=columns).to_csv('{}/results.csv'.format(results_dir))

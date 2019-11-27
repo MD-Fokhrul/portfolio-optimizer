@@ -36,10 +36,10 @@ class DatasetLoader():
             data_ret['CASH'] = cash_col
 
         # we want the first (1-test_split) rows as training data and the next test_split rows as test data
-        num_rows_data = data_ret.shape[0]
         num_rows_test = test_split_days
 
-        train_data = data_ret[:num_rows_data-num_rows_test]
+        # train data is full data
+        train_data = data_ret
         test_data = data_ret[-num_rows_test:]
 
         # plot stocks timeseries
