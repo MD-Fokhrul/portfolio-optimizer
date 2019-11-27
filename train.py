@@ -26,7 +26,7 @@ def train(data_df, agent, num_episodes, limit_iterations, num_warmup_iterations,
         current_state = env.reset()  # get initial state s(t)
 
         results = defaultdict(list) # for logging
-        for t in range(num_days - 1):
+        for t in range(num_days):
             if limit_iterations is not None and total_iterations_counter >= limit_iterations:
                 # option for hard limit on iterations for debugging
                 break

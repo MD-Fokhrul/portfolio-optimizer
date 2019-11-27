@@ -34,7 +34,7 @@ class PortfolioEnv(gym.Env):
     # reset environment to inital state i.e. between episodes.
     # returns starting state
     def reset(self):
-        self.current_step = 0
+        self.current_step = -1
         self.reward = 0
         self.portfolio = Portfolio(
             positions_price=self._init_prices(),
