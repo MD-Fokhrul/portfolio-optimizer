@@ -49,7 +49,7 @@ class DDPG():
     def update_policy(self):
         # sample random minibatch from R (s(i), a(i), r(i), s(i+1))
         minibatch_arrays_map = self.replay_buffer.get_sample_arrays_map()
-        states_minibatch, actions_minibatch, rewards_minibatch, result_states_minibatch = extract_tensors_from_buffer_map(minibatch_arrays_map)
+        states_minibatch, actions_minibatch, rewards_minibatch, result_states_minibatch = extract_tensors_from_buffer_map(minibatch_arrays_map, device=self.device)
 
         # predict action with target policy and critique
         next_predicted_action_minibatch = self.actor_target(result_states_minibatch).detach()
@@ -99,7 +99,7 @@ class DDPG():
         # add noise to action and clip weights to help the agent explore more actions (if training)
         action_res = action.detach().cpu().numpy() + noise
 
-        # TODO: better to normalize to 0-1 instead of clipping?
+        # TODO: better to normalize to 0-1 or clip?
         # return np.clip(action_res, 0, 1)
         return action_res / np.sum(action_res)
 
