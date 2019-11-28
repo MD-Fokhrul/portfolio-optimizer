@@ -101,8 +101,8 @@ if 'train' in modes:
     for epoch in range(num_epochs):
         running_losses = []
         for i in range(0, train_data.shape[0]-1, batch_size):
-            data = to_tensor(train_data[i:i+batch_size])
-            target = to_tensor(train_data[i+1:i+1+batch_size, :target_size])
+            data = to_tensor(train_data[i:i+batch_size], device=device)
+            target = to_tensor(train_data[i+1:i+1+batch_size, :target_size], device=device)
 
             # for last batch off by one errors, otherwise could have just used i+batch_size for data
             data = data[:target.shape[0]]
@@ -134,8 +134,8 @@ if 'test' in modes:
     model.eval()
     with torch.no_grad():
         for i, data in enumerate(test_data[:-1]): # we need to predict t+1 including May 31st and excluding last test day
-            data = to_tensor(data)
-            prediction = model(data)
+            data = to_tensor(data, device=device)
+            prediction = model(data, device=device)
             print('Predicted test day {}/{}'.format(i+1, test_split_days))
             output.append(prediction.cpu().numpy())
 
