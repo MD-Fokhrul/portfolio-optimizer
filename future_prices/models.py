@@ -12,7 +12,7 @@ class PricePredictionModel(nn.Module):
         # Main CNN
         cnn = models.resnet34(pretrained=True)
         feats = list(cnn.children())[:-1]
-        feats[0] = nn.Conv2d(1, hidden_size, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        feats[0] = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         self.features = nn.Sequential(*feats)
         self.intermediate = nn.Sequential(nn.Linear(
             cnn.fc.in_features, input_output_size),

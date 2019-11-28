@@ -165,7 +165,7 @@ assert (train_data_dim or test_data_dim)
 input_output_size = train_data_dim[1] if train_data_dim else test_data_dim[1]
 
 model = PricePredictionModel(input_output_size=input_output_size,
-                             hidden_size=input_output_size / 4) # todo: what about this hyperparam?
+                             hidden_size=int(input_output_size / 4))
 
 if load_model is not None:
     model.load(load_model)
