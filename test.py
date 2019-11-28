@@ -26,7 +26,7 @@ def test(data, agent, log_interval_steps, log_comet, experiment, visualize_portf
         next_state, current_reward, done, _ = env.step(current_action)
 
         if visualize_portfolio:
-            portfolio_img = plot_portfolio(env.portfolio, env.total_gains, title= 'day-{}'.format(t + 1))
+            portfolio_img = plot_portfolio(env.portfolio, env.total_gains, title='day-{}'.format(t + 1))
             holdings_imgs.append(portfolio_img)
 
         # logging

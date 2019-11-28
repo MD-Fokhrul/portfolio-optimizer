@@ -4,13 +4,14 @@ import datetime as dt
 from dateutil import parser
 
 class Preprocessor():
-    def __init__(self):
-        self.xls = pd.ExcelFile('sp500 reg data 18-19.xlsx')
+    def __init__(self, factors_path='sp500 reg data 18-19.xlsx', etf_path='etf 18-19.xlsx', prices_path='sp500 08-19.xlsx'):
+        self.xls = pd.ExcelFile(factors_path)
         # first sheet is blank
         self.stocks = self.xls.sheet_names[1:]
-        self.etf_np = self.processETFs('etf 18-19.xlsx')
+        self.etf_np = self.processETFs(etf_path)
         self.input_data = self.Process()
-        self.validification_data = self.Val()
+        if prices_path is not None:
+            self.validification_data = self.Val(prices_path)
 
     def Process(self):
         #writer = pd.ExcelWriter('processed.xlsx', engine='xlsxwriter')
@@ -161,8 +162,8 @@ class Preprocessor():
 
     # this reduces input by 1 day because we validate current t with t+1 price info
     # one day is cut off the end of input data as well
-    def Val(self):
-        xls = pd.ExcelFile('sp500 08-19.xlsx')
+    def Val(self, prices_path):
+        xls = pd.ExcelFile(prices_path)
         stk_df = xls.parse(xls.sheet_names[0], skiprows = 2611)
         # remove dates
         s = np.transpose(np.array(stk_df))[1:]
