@@ -8,7 +8,7 @@ class Preprocessor():
         self.xls = pd.ExcelFile(factors_path)
         # first sheet is blank
         self.stocks = self.xls.sheet_names[1:]
-        self.etf_np = self.processETFs(etf_path)
+        self.etf_np = self.processETFs(etf_path) if etf_path else []
         self.input_data = self.Process()
         if prices_path is not None:
             self.validification_data = self.Val(prices_path)
@@ -24,6 +24,7 @@ class Preprocessor():
         for stock in self.stocks:
             # dataframe of data for 1 stock
             stk_df = self.xls.parse(stock, skiprows = 0)
+            stk_df = stk_df[stk_df['Dates'] <= '2018-05-31']
             # remove dates
             stk_np = np.transpose(np.array(stk_df))[1:]
             stk_df = pd.DataFrame(np.transpose(stk_np))
