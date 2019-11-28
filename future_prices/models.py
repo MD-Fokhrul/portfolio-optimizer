@@ -5,7 +5,7 @@ from future_prices.util import find_latest_model_name
 
 
 class PricePredictionModel(nn.Module):
-    def __init__(self, input_output_size=505, hidden_size=128):
+    def __init__(self, input_size=505, output_size=505, hidden_size=128):
         super(PricePredictionModel, self).__init__()
         final_concat_size = 0
 
@@ -15,12 +15,12 @@ class PricePredictionModel(nn.Module):
         feats[0] = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         self.features = nn.Sequential(*feats)
         self.intermediate = nn.Sequential(nn.Linear(
-            cnn.fc.in_features, input_output_size),
+            cnn.fc.in_features, input_size),
             nn.ReLU())
-        final_concat_size += input_output_size
+        final_concat_size += input_size
 
         # Main LSTM
-        self.lstm = nn.LSTM(input_size=input_output_size,
+        self.lstm = nn.LSTM(input_size=input_size,
                             hidden_size=hidden_size,
                             num_layers=3,
                             batch_first=False)
@@ -35,7 +35,7 @@ class PricePredictionModel(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, int(hidden_size / 2)),
             nn.ReLU(),
-            nn.Linear(int(hidden_size / 2), input_output_size)
+            nn.Linear(int(hidden_size / 2), output_size)
             # nn.Tanh() TODO: try with tanh?
         )
 

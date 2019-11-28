@@ -31,13 +31,14 @@ class SubsetSampler(Sampler):
 class FuturePricesLoader(DataLoader):
 
     def __init__(self, config, phase, batch_size, data_dir, dataset_name, past_prices_lookback_window=30,
-                 num_cols_sample=None, limit_days=None, exclude_days=None, random_state=1):
+                 num_cols_sample=None, target_size=None, limit_days=None, exclude_days=None, random_state=1):
 
         self.futureprices = FuturePrices(config, phase,
                                          data_dir=data_dir,
                                          dataset_name=dataset_name,
                                          past_prices_lookback_window=past_prices_lookback_window,
                                          num_cols_sample=num_cols_sample,
+                                         target_size=target_size,
                                          limit_days=limit_days,
                                          exclude_days=exclude_days,
                                          random_state=random_state)
@@ -61,7 +62,7 @@ class FuturePrices(object):
     ## takes a config json object that specifies training parameters and a
     ## phase (string) to specifiy either 'train', 'test', 'validation'
     def __init__(self, config, phase, data_dir, dataset_name, past_prices_lookback_window=30,
-                 num_cols_sample=None, limit_days=None, exclude_days=None, random_state=1):
+                 num_cols_sample=None, target_size=None, limit_days=None, exclude_days=None, random_state=1):
 
         self.past_prices_lookback_window = past_prices_lookback_window
         self.config = config
@@ -90,6 +91,9 @@ class FuturePrices(object):
                                                                exclude_days=exclude_days,
                                                                random_state=random_state,
                                                                as_numpy=False)
+
+        # first target_size columns will be picked as the target if specified
+        self.target_size = target_size if target_size else self.dataframe.shape[1]
 
         # Here we calculate the temporal offset for the starting indices of each chapter. As we cannot cross chapter
         # boundaries but would still like to obtain a temporal sequence of images, we cannot start at index 0 of each chapter
@@ -210,12 +214,12 @@ class FuturePrices(object):
             inputs[i]['past_prices'] = past_prices_img
 
         if self.phase != 'test':
-            next_prices = self.dataframe.iloc[index+1].to_numpy().reshape(1, -1)
+            next_prices = self.dataframe.iloc[index+1, :self.target_size].to_numpy().reshape(1, -1)
             next_prices = self.next_prices_transform(next_prices) # might need to remove reshape if we predict more than one line
 
             labels['next_prices'] = next_prices
         else:
-            labels['next_prices'] = np.empty((1, inputs[0]['past_prices'].shape[1]))
+            labels['next_prices'] = np.empty((1, self.target_size))
         
         return inputs, labels
 

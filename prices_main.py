@@ -14,6 +14,7 @@ parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
 parser.add_argument('--limit_days', type=int, default=None, help='total set days limit')
 parser.add_argument('--val_days', type=int, default=None, help='validation set days')
 parser.add_argument('--num_sample_stocks', type=int, help='number of stocks to sample')
+parser.add_argument('--output_size', type=int, default=506, help='output size')
 parser.add_argument('--days_lookback_window', type=int, default=30, help='number of days to consider in an "image"')
 parser.add_argument('--save_checkpoints', type=util.str2bool, nargs='?', const=True, default=True, help='should save checkpoints')
 parser.add_argument('--checkpoints_interval', type=int, default=10, help='episodes interval for saving model checkpoint')
@@ -52,6 +53,7 @@ load_model = args.load_model
 modes = args.modes
 test_predict_days = args.test_predict_days
 results_root_dir = args.results_root_dir
+output_size= args.output_size
 
 start = time.time()
 
@@ -117,6 +119,7 @@ data_loader_config = util.load_config('future_prices/lstm_config.json')
 if 'train' in modes:
     train_loader = FuturePricesLoader(data_loader_config, 'train', batch_size, data_dir, dataset_name,
                                           days_lookback_window, num_sample_stocks,
+                                          target_size=output_size,
                                           limit_days=limit_days,
                                           exclude_days=val_days)
 
@@ -125,6 +128,7 @@ if 'train' in modes:
     if val_days and val_days > 0:
         validation_loader = FuturePricesLoader(data_loader_config, 'validation', batch_size, data_dir, dataset_name,
                                               days_lookback_window, num_sample_stocks,
+                                              target_size=output_size,
                                               limit_days=val_days)
         val_data_dim = validation_loader.data_dim
 
@@ -132,6 +136,7 @@ if 'test' in modes:
     test_loader = FuturePricesLoader(data_loader_config, 'test', batch_size, data_dir, dataset_name,
                                           days_lookback_window, num_sample_stocks,
                                           # +1 for window offset, +2 for temporal frequency offset (see indices in dataloader)
+                                          target_size=output_size,
                                           limit_days=days_lookback_window)
 
     test_data_dim = test_loader.data_dim
@@ -162,10 +167,11 @@ if log_comet:
 
 # SETUP MODEL #
 assert (train_data_dim or test_data_dim)
-input_output_size = train_data_dim[1] if train_data_dim else test_data_dim[1]
+input_size = train_data_dim[1] if train_data_dim else test_data_dim[1]
 
-model = PricePredictionModel(input_output_size=input_output_size,
-                             hidden_size=int(input_output_size / 4))
+model = PricePredictionModel(input_size=input_size,
+                             output_size=output_size,
+                             hidden_size=int(input_size / 4))
 
 if load_model is not None:
     model.load(load_model)
