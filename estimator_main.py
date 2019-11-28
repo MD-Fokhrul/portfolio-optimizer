@@ -102,6 +102,7 @@ if 'train' in modes:
     model.train()
     for epoch in range(num_epochs):
         running_losses = []
+        batch_idx = 0
         for i in range(0, train_data.shape[0]-1, batch_size):
             data = to_tensor(train_data[i:i+batch_size], device=device)
             target = to_tensor(train_data[i+1:i+1+batch_size, :target_size], device=device)
@@ -119,10 +120,11 @@ if 'train' in modes:
             optimizer.step()
             # print statistics
             running_losses.append(loss.item())
-            if (i+1) % log_interval == 0:
+            if (batch_idx + 1) % log_interval == 0:
                 interval_losses = running_losses[-log_interval:]
                 print('[epoch: {}, step:  {}] loss: {:.5f}'.format
                       (epoch + 1, i + 1, sum(interval_losses) / len(interval_losses)))
+            batch_idx += 1
 
         if save_checkpoints and (epoch + 1) % checkpoints_interval == 0:
             model_path = '{}/model_{}.pth'.format(checkpoints_dir, epoch+1)
