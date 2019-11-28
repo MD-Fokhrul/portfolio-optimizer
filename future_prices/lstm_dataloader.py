@@ -79,6 +79,10 @@ class FuturePrices(object):
         for k, v in target_std.items():
             self.target_std[k] = np.asarray(v, dtype=np.float32)
 
+        if limit_days is not None:
+            # for testing need to pad days to accommodate for historic number window
+            limit_days = limit_days + self.history_number + 1
+
         #### reading in dataframe from csv #####
         base_dataset_loader = DatasetLoader(data_dir, dataset_name)
         self.dataframe, _, _, _ = base_dataset_loader.get_data(num_cols_sample=num_cols_sample,
@@ -212,6 +216,6 @@ class FuturePrices(object):
             labels['next_prices'] = next_prices
         else:
             labels['next_prices'] = np.empty((1, inputs[0]['past_prices'].shape[1]))
-
+        
         return inputs, labels
 

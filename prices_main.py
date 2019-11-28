@@ -132,7 +132,7 @@ if 'test' in modes:
     test_loader = FuturePricesLoader(data_loader_config, 'test', batch_size, data_dir, dataset_name,
                                           days_lookback_window, num_sample_stocks,
                                           # +1 for window offset, +2 for temporal frequency offset (see indices in dataloader)
-                                          limit_days=days_lookback_window+3)
+                                          limit_days=days_lookback_window)
 
     test_data_dim = test_loader.data_dim
 
