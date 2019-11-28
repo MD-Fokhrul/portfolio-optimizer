@@ -65,6 +65,8 @@ train_data, test_data, _, _ = dataloader.get_data(limit_days=limit_days,
                                             as_numpy=True,
                                             drop_test=True)
 
+print('train data: {} | test data: {} | batch_size: {}'.format(train_data.shape, test_data.shape, batch_size))
+
 
 model = EstimationModel(input_size=train_data.shape[1], output_size=target_size)
 if load_model:
