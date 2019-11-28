@@ -143,7 +143,7 @@ if 'test' in modes:
     test_data_dim = test_loader.data_dim
 
 
-output_size = train_loader.futureprices.target_size
+output_size = train_loader.futureprices.target_size if train_loader else test_loader
 
 
 validation_dataloader = None
