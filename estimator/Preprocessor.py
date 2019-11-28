@@ -140,7 +140,9 @@ class Preprocessor():
 
     def processETFs(self, xls):
         etf_xls = pd.ExcelFile(xls)
-        df = etf_xls.parse(etf_xls.sheet_names[0], skiprows = 0)
+        df = etf_xls.parse(etf_xls.sheet_names[0], skiprows=1)
+        df = df[df['Dates'] <= '2018-05-31']
+
         # remove dates
         s = np.transpose(np.array(df))[1:]
         df = pd.DataFrame(np.transpose(s))
