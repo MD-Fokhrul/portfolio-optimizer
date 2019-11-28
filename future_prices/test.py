@@ -27,7 +27,3 @@ def test(model, predict_days, test_loader, device, results_dir):
     output_path = '{}/results.csv'.format(results_dir)
     print('Saving results to "{}"...'.format(output_path))
     test_loader.futureprices.dataframe.iloc[-predict_days:].reset_index(drop=True, inplace=False).to_csv(output_path)
-
-
-
-

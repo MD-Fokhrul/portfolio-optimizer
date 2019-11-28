@@ -1,52 +1,29 @@
-from torchvision import models
 import torch.nn as nn
 import torch
-import torch.optim as optim
+from future_prices.util import find_latest_model_name
 
-class ExpValModel(nn.Module):
-    def __init__(self):
-        super(ExpValModel, self).__init__()
 
-        # for lstm?
-        self.count = 0
-
-        final_concat_size = 0
-
-        # LSTM
-        #self.lstm = nn.LSTM(input_size=505, hidden_size = 505, batch_first=False)
+class EstimationModel(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(EstimationModel, self).__init__()
 
         # Regressor
-        self.value = nn.Sequential(
-            nn.Linear(10624, 5312),
+        self.regressor = nn.Sequential(
+            nn.Linear(input_size, int(input_size / 2)),
             nn.ReLU(),
-            nn.Linear(5312, 2656),
+            nn.Linear(int(input_size / 2), int(input_size / 4)),
             nn.ReLU(),
-            nn.Linear(2656, 1328),
+            nn.Linear(int(input_size / 4), int(input_size / 8)),
             nn.ReLU(),
-            nn.Linear(1328,505)
+            nn.Linear(int(input_size / 8), output_size)
         )
 
     def forward(self, data):
-        module_outputs = []
-        lstm_i = []
+        return self.regressor(data)
 
-        for d in data:
-            x = self.value(d)
-            lstm_i.append(x)
-            self.count += 1
-            #if self.count >= 90:
-            module_outputs.append(x)
+    def load(self, model_dir_path):
+        model_path = find_latest_model_name(model_dir_path)
+        print('Loading saved model: {}'.format(model_path))
+        self.load_state_dict(torch.load(model_path))
 
-        # LSTM
-        #i_lstm, _ = self.lstm(torch.stack(lstm_i))
-        #module_outputs.append(i_lstm[-89])
 
-        # Concatenate current output and LSTM output.
-        # x_cat = torch.cat(module_outputs, dim=-1)
-
-        # Feed concatenated outputs into the
-        # regession networks.
-        #prediction = []
-        #prediction.append(self.value(x_cat))
-        prediction = module_outputs
-        return prediction
