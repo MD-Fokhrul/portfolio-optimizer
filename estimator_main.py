@@ -135,7 +135,8 @@ if 'test' in modes:
     with torch.no_grad():
         for i, data in enumerate(test_data[:-1]): # we need to predict t+1 including May 31st and excluding last test day
             data = to_tensor(data, device=device)
-            prediction = model(data, device=device)
+
+            prediction = model(data)
             print('Predicted test day {}/{}'.format(i+1, test_split_days))
             output.append(prediction.cpu().numpy())
 
