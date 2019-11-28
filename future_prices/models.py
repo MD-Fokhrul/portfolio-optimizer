@@ -5,7 +5,7 @@ from future_prices.util import find_latest_model_name
 
 
 class PricePredictionModel(nn.Module):
-    def __init__(self, input_size=505, output_size=505, hidden_size=128):
+    def __init__(self, input_size=506, output_size=506, hidden_size=128):
         super(PricePredictionModel, self).__init__()
         final_concat_size = 0
 
@@ -74,4 +74,3 @@ class PricePredictionModel(nn.Module):
         model_path = find_latest_model_name(model_dir_path)
         print('Loading saved model: {}'.format(model_path))
         self.load_state_dict(torch.load(model_path))
-
