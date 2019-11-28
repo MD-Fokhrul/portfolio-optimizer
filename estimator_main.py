@@ -119,7 +119,7 @@ if 'train' in modes:
             optimizer.step()
             # print statistics
             running_losses.append(loss.item())
-            if i+1 % log_interval == 0:
+            if (i+1) % log_interval == 0:
                 interval_losses = running_losses[-log_interval:]
                 print('[epoch: {}, step:  {}] loss: {:.5f}'.format
                       (epoch + 1, i + 1, sum(interval_losses) / len(interval_losses)))
