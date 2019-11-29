@@ -161,7 +161,7 @@ if 'test' in modes:
     # we still want to train
     train(train_data_df, agent, 1, limit_iterations, num_warmup_iterations, vol_lookback,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir,
-          save_checkpoints=False, is_test=True, results_dir=results_dir, test_split_days=test_split_days)
+          save_checkpoints=False, is_test=True, results_dir=results_dir)
 
 # logging
 if log_comet:
