@@ -159,9 +159,9 @@ if 'test' in modes:
     # test(test_data, agent, log_interval_steps, log_comet, experiment, visualize_portfolio=visualize_portfolio)
 
     # we still want to train
-    train(test_data_df, agent, 1, limit_iterations, num_warmup_iterations, vol_lookback,
+    train(train_data_df, agent, 1, limit_iterations, num_warmup_iterations, vol_lookback,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval, checkpoints_dir,
-          save_checkpoints=False, is_test=True, results_dir=results_dir)
+          save_checkpoints=False, is_test=True, results_dir=results_dir, test_split_days=test_split_days)
 
 # logging
 if log_comet:

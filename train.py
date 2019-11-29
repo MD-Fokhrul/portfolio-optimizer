@@ -5,7 +5,7 @@ import util
 
 def train(data_df, agent, num_episodes, limit_iterations, num_warmup_iterations, volatility_lookback,
           log_interval_steps, log_comet, comet_log_level, experiment, checkpoints_interval,
-          checkpoints_dir, save_checkpoints, is_test=False, results_dir=None):
+          checkpoints_dir, save_checkpoints, is_test=False, results_dir=None, test_split_days=None):
 
     data = data_df.to_numpy()
 
@@ -38,7 +38,7 @@ def train(data_df, agent, num_episodes, limit_iterations, num_warmup_iterations,
                 # regular training. Let agent select action based on observation
                 current_action = agent.select_action(current_state)
 
-            if is_test:
+            if is_test and t >= len(num_days) - test_split_days:
                 output.append(current_action)
 
             # execute action on environment, observe new state and reward
