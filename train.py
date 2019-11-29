@@ -38,7 +38,7 @@ def train(data_df, agent, num_episodes, limit_iterations, num_warmup_iterations,
                 # regular training. Let agent select action based on observation
                 current_action = agent.select_action(current_state)
 
-            if is_test and t >= len(num_days) - test_split_days:
+            if is_test and t >= num_days - test_split_days:
                 output.append(current_action)
 
             # execute action on environment, observe new state and reward
