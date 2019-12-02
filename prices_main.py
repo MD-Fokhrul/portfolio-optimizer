@@ -108,35 +108,31 @@ print('device is: ', device)
 # SETUP DATALOADERS #
 
 val_data_dim = None
-train_data_dim = None
 test_data_dim = None
-train_loader = None
 validation_loader = None
 test_loader = None
 
 data_loader_config = util.load_config('future_prices/lstm_config.json')
 
-if 'train' in modes:
-    train_loader = FuturePricesLoader(data_loader_config, 'train', batch_size, data_dir, dataset_name,
+train_loader = FuturePricesLoader(data_loader_config, 'train', batch_size, data_dir, dataset_name,
+                                      days_lookback_window, num_sample_stocks,
+                                      target_size=target_size,
+                                      limit_days=limit_days,
+                                      exclude_days=val_days)
+
+train_data_dim = train_loader.data_dim
+
+if val_days and val_days > 0:
+    validation_loader = FuturePricesLoader(data_loader_config, 'validation', batch_size, data_dir, dataset_name,
                                           days_lookback_window, num_sample_stocks,
                                           target_size=target_size,
-                                          limit_days=limit_days,
-                                          exclude_days=val_days)
-
-    train_data_dim = train_loader.data_dim
-
-    if val_days and val_days > 0:
-        validation_loader = FuturePricesLoader(data_loader_config, 'validation', batch_size, data_dir, dataset_name,
-                                              days_lookback_window, num_sample_stocks,
-                                              target_size=target_size,
-                                              limit_days=val_days)
-        val_data_dim = validation_loader.data_dim
+                                          limit_days=val_days)
+    val_data_dim = validation_loader.data_dim
 
 
 if 'test' in modes:
     test_loader = FuturePricesLoader(data_loader_config, 'test', batch_size, data_dir, dataset_name,
                                           days_lookback_window, num_sample_stocks,
-                                          # +1 for window offset, +2 for temporal frequency offset (see indices in dataloader)
                                           target_size=target_size,
                                           limit_days=days_lookback_window)
 
@@ -195,6 +191,6 @@ if 'train' in modes:
 
 if 'test' in modes:
     print('--Started testing--')
-    test(model, test_predict_days, test_loader, device, results_dir)
+    test(model, test_predict_days, train_loader, test_loader, device, results_dir)
     print('--Finished testing--')
 

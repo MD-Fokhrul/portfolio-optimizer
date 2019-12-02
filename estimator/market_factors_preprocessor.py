@@ -24,7 +24,7 @@ class Preprocessor():
         for stock in self.stocks:
             # dataframe of data for 1 stock
             stk_df = self.xls.parse(stock, skiprows = 0)
-            stk_df = stk_df[stk_df['Dates'] <= '2018-05-31']
+            stk_df = stk_df[stk_df['Dates'] <= '2019-01-03']
             # remove dates
             stk_np = np.transpose(np.array(stk_df))[1:]
             stk_df = pd.DataFrame(np.transpose(stk_np))
@@ -141,7 +141,7 @@ class Preprocessor():
     def processETFs(self, xls):
         etf_xls = pd.ExcelFile(xls)
         df = etf_xls.parse(etf_xls.sheet_names[0], skiprows=1)
-        df = df[df['Dates'] <= '2018-05-31']
+        df = df[df['Dates'] <= '2019-01-03']
 
         # remove dates
         s = np.transpose(np.array(df))[1:]

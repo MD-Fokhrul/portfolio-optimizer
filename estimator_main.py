@@ -11,7 +11,8 @@ import time
 import os
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_name', type=str, default='sp500', help='dataset name')
+parser.add_argument('--input_dataset_name', type=str, help='predicted input dataset name')
+parser.add_argument('--target_dataset_name', type=str, help='target ground truth dataset name')
 parser.add_argument('--data_dir', type=str, default='data', help='data directory')
 parser.add_argument('--test_split_days', type=int, default=152, help='number of days to set as test data')
 parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
@@ -20,9 +21,7 @@ parser.add_argument('--limit_days', type=int, help='limit days (steps per episod
 parser.add_argument('--num_sample_stocks', type=int, help='number of stocks to sample')
 parser.add_argument('--batch_size', type=int, default=8, help='batch size')
 parser.add_argument('--target_size', type=int, default=506, help='number of first k columns for target')
-parser.add_argument('--log_interval', type=int, default=20, help='steps interval for print and comet logging')
-parser.add_argument('--log_comet', type=util.str2bool, nargs='?', const=True, default=False, help='should log to comet')
-parser.add_argument('--comet_tags', nargs='+', default=[], help='tags for comet logging')
+parser.add_argument('--log_interval', type=int, default=20, help='steps interval for printing')
 parser.add_argument('--force_cpu', type=util.str2bool, nargs='?', const=True, default=False, help='should force cpu even if cuda is available')
 parser.add_argument('--checkpoints_interval', type=int, default=10, help='epochs interval for saving model checkpoint')
 parser.add_argument('--checkpoints_root_dir', type=str, default='estimation_checkpoints', help='checkpoint root directory')
@@ -33,7 +32,6 @@ parser.add_argument('--modes', nargs='+', default=['train'], help='train and/or 
 args = parser.parse_args()
 
 log_interval = args.log_interval
-log_comet = args.log_comet
 num_epochs = args.epochs
 batch_size = args.batch_size
 target_size = args.target_size
@@ -41,10 +39,10 @@ learning_rate = args.lr
 data_dir = args.data_dir
 test_split_days = args.test_split_days
 num_sample_stocks = args.num_sample_stocks
-dataset_name = args.dataset_name
+input_dataset_name = args.input_dataset_name
+target_dataset_name = args.target_dataset_name
 force_cpu = args.force_cpu
 limit_days = args.limit_days
-comet_tags = args.comet_tags + [dataset_name]
 checkpoints_interval = args.checkpoints_interval
 checkpoints_root_dir = args.checkpoints_root_dir
 results_root_dir = args.results_root_dir
@@ -59,13 +57,23 @@ device = torch.device(device_type)
 experiment = None
 start = time.time()
 
-dataloader = DatasetLoader(data_dir, dataset_name)
-train_data, test_data, _, _ = dataloader.get_data(limit_days=limit_days,
-                                            test_split_days=test_split_days+1,
-                                            as_numpy=True,
-                                            drop_test=True)
+# training input data. We exclude the predicted test days for training
+input_dataloader = DatasetLoader(data_dir, input_dataset_name)
+train_data, _, _, _ = input_dataloader.get_data(limit_days=limit_days+test_split_days,
+                                            exclude_days=test_split_days,
+                                            as_numpy=True)
 
-print('train data: {} | test data: {} | batch_size: {}'.format(train_data.shape, test_data.shape, batch_size))
+# training target labels (should not have test days)
+target_dataloader = DatasetLoader(data_dir, target_dataset_name)
+train_labels, _, _, _ = target_dataloader.get_data(limit_days=limit_days,
+                                            as_numpy=True)
+
+# test input data. Does not have corresponding labels
+test_dataloader = DatasetLoader(data_dir, input_dataset_name)
+test_data_df, _, _, _ = test_dataloader.get_data(limit_days=test_split_days,
+                                              as_numpy=False)
+
+print('train data: {} | batch_size: {}'.format(train_data.shape, batch_size))
 
 
 model = EstimationModel(input_size=train_data.shape[1], output_size=target_size)
@@ -84,16 +92,15 @@ else:
 # END SETUP CHECKPOINTS DIR #
 
 # SETUP RESULTS DIR #
-if 'test' in modes:
-    results_dir_name = experiment.get_key() if experiment is not None else str(int(start))
+results_dir_name = experiment.get_key() if experiment is not None else str(int(start))
 
-    if 'train' in modes and save_checkpoints:
-        results_dir_name = checkpoints_dir_name
-    elif load_model:
-        results_dir_name = '{}_{}'.format(load_model.split('/')[-2 if load_model[-1] == '/' else -1], results_dir_name)
+if 'train' in modes and save_checkpoints:
+    results_dir_name = checkpoints_dir_name
+elif load_model:
+    results_dir_name = '{}_{}'.format(load_model.split('/')[-2 if load_model[-1] == '/' else -1], results_dir_name)
 
-    results_dir = '{}/{}'.format(results_root_dir, results_dir_name)
-    os.makedirs(results_dir, exist_ok=True)
+results_dir = '{}/{}'.format(results_root_dir, results_dir_name)
+os.makedirs(results_dir, exist_ok=True)
 # END SETUP RESULTS DIR #
 
 if 'train' in modes:
@@ -103,12 +110,9 @@ if 'train' in modes:
     for epoch in range(num_epochs):
         running_losses = []
         batch_idx = 0
-        for i in range(0, train_data.shape[0]-1, batch_size):
+        for i in range(0, train_data.shape[0], batch_size):
             data = to_tensor(train_data[i:i+batch_size], device=device)
-            target = to_tensor(train_data[i+1:i+1+batch_size, :target_size], device=device)
-
-            # for last batch off by one errors, otherwise could have just used i+batch_size for data
-            data = data[:target.shape[0]]
+            target = to_tensor(train_labels[i:i+batch_size, :target_size], device=device)
 
             optimizer.zero_grad()
 
@@ -134,17 +138,48 @@ if 'train' in modes:
               (epoch + 1, sum(running_losses) / len(running_losses)))
 
 if 'test' in modes:
+    test_data = test_data_df.to_numpy()
+    columns = test_data_df.columns[:target_size]
+
+    # setup output file
     output = []
+    output_path = '{}/results.csv'.format(results_dir)
+    pd.DataFrame([], columns=columns).to_csv(output_path)
+
+    output_interval = 5
+    last_output_index = 0
+
     model.eval()
     with torch.no_grad():
-        for i, data in enumerate(test_data[:-1]): # we need to predict t+1 including May 31st and excluding last test day
+        for i, data in enumerate(train_data):
+            data = to_tensor(data, device=device)
+
+            prediction = model(data)
+            output.append(prediction.detach().cpu().numpy())
+
+            if (i+1) % output_interval == 0 or (i+1) == len(train_data):
+                print('predicting training day t+1 {}/{}...'.format(
+                    i + 1, len(train_data)))
+
+                pd.DataFrame(output, columns=columns, index=range(last_output_index, i+1)) \
+                    .to_csv(output_path,
+                            header=False,
+                            mode='a')
+                last_output_index = i + 1
+                output = []
+
+        for i, data in enumerate(test_data):
             data = to_tensor(data, device=device)
 
             prediction = model(data)
             print('Predicted test day {}/{}'.format(i+1, test_split_days))
-            output.append(prediction.cpu().numpy())
+            output.append(prediction.detach().cpu().numpy())
 
-    output_path = '{}/results.csv'.format(results_dir)
-    pd.DataFrame(output).to_csv(output_path)
+        output_df = pd.DataFrame(output)
+        output_df.index = range(last_output_index, last_output_index+len(output_df))
+        output_df.to_csv(output_path,
+                            header=False,
+                            mode='a')
+        print('Saved results to "{}"...'.format(output_path))
 
 
