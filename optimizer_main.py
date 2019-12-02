@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
 from scipy.optimize import Bounds
-from optimizer.util import optimize
+from optimizer.util import handle_optimization
+from functools import partial
 import argparse
+import multiprocessing as mp
 
 ###
 # This conic optimizer is used for two cases in the architecture:
@@ -21,6 +23,7 @@ parser.add_argument('--exclude_predicted_days', type=int, default=None, help='ex
 parser.add_argument('--weight_min', type=float, default=-0.5, help='weight min value')
 parser.add_argument('--weight_max', type=float, default=2.0, help='weight max value')
 parser.add_argument('--lookback_window', type=int, default=90, help='lookback window days')
+parser.add_argument('--num_threads', type=int, default=1, help='concurrency')
 args = parser.parse_args()
 
 input_path_real = args.input_path_real
@@ -31,6 +34,7 @@ weight_max = args.weight_max
 lookback_window = args.lookback_window
 limit_days = args.limit_days
 exclude_predicted_days = args.exclude_predicted_days
+num_threads = min(args.num_threads, mp.cpu_count())
 
 prices_real = pd.read_csv(input_path_real)
 # prediction mode or ground truth mode
@@ -58,20 +62,27 @@ except AssertionError:
 num_days = prices_real.shape[0]
 num_stocks = prices_real.shape[1]
 
+thread_pool = mp.Pool(num_threads)
+
 w_ret = np.zeros(prices_real.shape)
+
+# bounds for weights. -.5/2 default
 bounds = Bounds([weight_min]*num_stocks, [weight_max]*num_stocks)
-for i in range ((lookback_window-1), num_days):
-    # get lookback of k days from real prices and lookahead of 1 from predicted prices
-    train_real = prices_real.iloc[i-(lookback_window-1):i]
-    train_predicted = prices_predicted.iloc[i:i+1]
-    train = pd.concat([train_real, train_predicted], axis=0).reset_index(drop=True)
 
-    print("optimizing row {}/{}...".format(i-(lookback_window-1), num_days))
-    cov = train.cov()
-    expected_val = train.mean()
-    w = np.random.rand(len(train.columns))
-    w = w/np.sum(w)
-    test = optimize(w, cov.values, expected_val, bounds)
-    w_ret[i-(lookback_window-1), :] = test
+# each row takes 30 seconds to optimize, so multithreading is crucial
+multithread_partial = partial(handle_optimization,
+        bounds=bounds,
+        lookback_window=lookback_window,
+        prices_real=prices_real,
+        prices_predicted=prices_predicted,
+        num_stocks=num_stocks,
+        num_days=num_days)
 
+optimal_weights_unsorted = thread_pool.map(multithread_partial, range((lookback_window-1), num_days))
+
+for i, w in optimal_weights_unsorted.sort(lambda pair: pair[0]):
+    w_ret[i, :] = w
+
+print('Saving optimal weights to "{}"'.format(output_path))
 pd.DataFrame(w_ret).to_csv(output_path)
+
