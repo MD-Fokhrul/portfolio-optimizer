@@ -19,7 +19,7 @@ def handle_optimization(i, bounds, lookback_window, prices_real, prices_predicte
     train_predicted = prices_predicted.iloc[i:i+1]
     train = pd.concat([train_real, train_predicted], axis=0).reset_index(drop=True)
 
-    print("optimizing row {}/{}...".format(i-(lookback_window-1), num_days))
+    print("optimizing row {}/{}...".format(i-(lookback_window-1), num_days - (lookback_window-1)))
     cov = train.cov()
     expected_val = train.mean()
     w = np.random.rand(num_stocks)
