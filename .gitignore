@@ -7,3 +7,11 @@ __pycache__
 checkpoints
 CU_*.csv
 sample_submission.csv
+*.swp
+prices_checkpoints
+prices_results
+results
+howto.txt
+data/ld*
+estimation_checkpoints
+estimation_results
