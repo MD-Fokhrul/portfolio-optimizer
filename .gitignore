@@ -2,7 +2,7 @@ config.json
 __pycache__
 .idea
 *.ipynb*
-*.png
+*_plot.png
 *.gif
 checkpoints
 CU_*.csv
