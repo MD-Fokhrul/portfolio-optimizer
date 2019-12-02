@@ -14,6 +14,7 @@ import multiprocessing as mp
 # In case #2 we generate an optimal weight using a lookback window of k real price vectors + one day lookahead predicted price vector.
 ###
 
+# CLI ARG PARSE #
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_path_real', required=True, type=str, help='prices input data csv path')
 parser.add_argument('--input_path_predicted', default=None, type=str, help='prices input data csv path')
@@ -25,7 +26,9 @@ parser.add_argument('--weight_max', type=float, default=2.0, help='weight max va
 parser.add_argument('--lookback_window', type=int, default=90, help='lookback window days')
 parser.add_argument('--num_threads', type=int, default=1, help='concurrency')
 args = parser.parse_args()
+# END CLI ARG PARSE #
 
+# SET VARS #
 input_path_real = args.input_path_real
 input_path_predicted = args.input_path_predicted
 output_path = args.output_path
@@ -35,6 +38,7 @@ lookback_window = args.lookback_window
 limit_days = args.limit_days
 exclude_predicted_days = args.exclude_predicted_days
 num_threads = min(args.num_threads, mp.cpu_count())
+# END SET VARS #
 
 prices_real = pd.read_csv(input_path_real)
 # prediction mode or ground truth mode
@@ -80,7 +84,7 @@ multithread_partial = partial(handle_optimization,
 
 optimal_weights_unsorted = thread_pool.map(multithread_partial, range((lookback_window-1), num_days))
 
-for i, w in optimal_weights_unsorted.sort(lambda pair: pair[0]):
+for i, w in sorted(optimal_weights_unsorted, key=lambda pair: pair[0]):
     w_ret[i, :] = w
 
 print('Saving optimal weights to "{}"'.format(output_path))

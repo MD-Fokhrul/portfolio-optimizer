@@ -10,6 +10,15 @@ import pandas as pd
 import time
 import os
 
+###
+#
+# This NN regressor is used for two parts of the ensemble:
+# 1. Learn real price change from predicted price change and predicted market variables
+# 2. Learn optimal w* from DDPG predicted w* and conic optimizer predicted w*
+# In both cases the two inputs need to be concatenated on the wide axis before using this script.
+###
+
+# CLI ARG PARSE #
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_dataset_name', type=str, help='predicted input dataset name')
 parser.add_argument('--target_dataset_name', type=str, help='target ground truth dataset name')
@@ -30,7 +39,9 @@ parser.add_argument('--save_checkpoints', type=util.str2bool, nargs='?', const=T
 parser.add_argument('--load_model', type=str, default=None, help='checkpoint dir path to load from')
 parser.add_argument('--modes', nargs='+', default=['train'], help='train and/or test')
 args = parser.parse_args()
+# END CLI ARG PARSE #
 
+# SET VARS #
 log_interval = args.log_interval
 num_epochs = args.epochs
 batch_size = args.batch_size
@@ -49,6 +60,7 @@ results_root_dir = args.results_root_dir
 save_checkpoints = args.save_checkpoints
 load_model = args.load_model
 modes = args.modes
+# END SET VARS #
 
 # cuda/cpu
 device_type = determine_device(force_cpu=force_cpu)
@@ -56,6 +68,8 @@ device = torch.device(device_type)
 
 experiment = None
 start = time.time()
+
+# load data
 
 # training input data. We exclude the predicted test days for training
 input_dataloader = DatasetLoader(data_dir, input_dataset_name)
@@ -103,6 +117,7 @@ results_dir = '{}/{}'.format(results_root_dir, results_dir_name)
 os.makedirs(results_dir, exist_ok=True)
 # END SETUP RESULTS DIR #
 
+## TRAINING ##
 if 'train' in modes:
     criterion = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
@@ -136,7 +151,9 @@ if 'train' in modes:
 
         print('[epoch: {}, final] loss: {:.5f}'.format
               (epoch + 1, sum(running_losses) / len(running_losses)))
+## END TRAINING ##
 
+## TESTING ##
 if 'test' in modes:
     test_data = test_data_df.to_numpy()
     columns = test_data_df.columns[:target_size]
@@ -151,6 +168,7 @@ if 'test' in modes:
 
     model.eval()
     with torch.no_grad():
+        # first we predict and save for existing training data days
         for i, data in enumerate(train_data):
             data = to_tensor(data, device=device)
 
@@ -161,6 +179,7 @@ if 'test' in modes:
                 print('predicting training day t+1 {}/{}...'.format(
                     i + 1, len(train_data)))
 
+                # with market variables we will be dealing with very large amounts of data. better to save every few iterations
                 pd.DataFrame(output, columns=columns, index=range(last_output_index, i+1)) \
                     .to_csv(output_path,
                             header=False,
@@ -168,6 +187,7 @@ if 'test' in modes:
                 last_output_index = i + 1
                 output = []
 
+        # then we predict and save for new test data days
         for i, data in enumerate(test_data):
             data = to_tensor(data, device=device)
 
@@ -182,4 +202,4 @@ if 'test' in modes:
                             mode='a')
         print('Saved results to "{}"...'.format(output_path))
 
-
+## END TESTING ##
