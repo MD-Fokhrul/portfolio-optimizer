@@ -4,8 +4,8 @@ import pandas as pd
 
 
 # conic optimization of price change covariance to weights using SLSQP method
-def optimize(w, cov, expected_val, bounds):
-    init_guess = np.ones(len(w)) * (1.0 / len(w))
+def optimize(num_stocks, cov, expected_val, bounds):
+    init_guess = np.ones(num_stocks) * (1.0 / num_stocks)
     weights = minimize(lambda w: (np.matmul(w.T,np.matmul(cov,w)) - np.matmul(w.T,expected_val)), init_guess,
                        method='SLSQP', options={'disp': False}, constraints=({'type': 'eq', 'fun': lambda w: 1.0 - np.sum(w)}), bounds=bounds)
     return weights.x
@@ -22,7 +22,5 @@ def handle_optimization(i, bounds, lookback_window, prices_real, prices_predicte
     print("optimizing row {}/{}...".format(i-(lookback_window-1), num_days - (lookback_window-1)))
     cov = train.cov()
     expected_val = train.mean()
-    w = np.random.rand(num_stocks)
-    w = w/np.sum(w)
-    test = optimize(w, cov.values, expected_val, bounds)
+    test = optimize(num_stocks, cov.values, expected_val, bounds)
     return (i-(lookback_window-1), test)
