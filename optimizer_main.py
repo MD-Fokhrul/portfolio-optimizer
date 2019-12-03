@@ -70,7 +70,7 @@ thread_pool = mp.Pool(num_threads)
 
 output_days = num_days - (lookback_window-1)
 w_ret = np.zeros((output_days, prices_real.shape[0]))
-print(w_ret.shape)
+print('output shape: {}'.format(w_ret.shape))
 # bounds for weights. -.5/2 default
 bounds = Bounds([weight_min]*num_stocks, [weight_max]*num_stocks)
 
