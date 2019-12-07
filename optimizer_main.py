@@ -40,9 +40,9 @@ exclude_predicted_days = args.exclude_predicted_days
 num_threads = min(args.num_threads, mp.cpu_count())
 # END SET VARS #
 
-prices_real = pd.read_csv(input_path_real)
+prices_real = pd.read_csv(input_path_real, index_col=0)
 # prediction mode or ground truth mode
-prices_predicted = pd.read_csv(input_path_predicted) if input_path_predicted else prices_real
+prices_predicted = pd.read_csv(input_path_predicted, index_col=0) if input_path_predicted else prices_real
 
 if limit_days:
     prices_real = prices_real.iloc[-limit_days:]

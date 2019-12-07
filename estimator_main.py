@@ -23,6 +23,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--input_dataset_name', type=str, help='predicted input dataset name')
 parser.add_argument('--target_dataset_name', type=str, help='target ground truth dataset name')
 parser.add_argument('--data_dir', type=str, default='data', help='data directory')
+parser.add_argument('--normalize', type=util.str2bool, nargs='?', const=True, default=False, help='should normalize data?')
 parser.add_argument('--test_split_days', type=int, default=152, help='number of days to set as test data')
 parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
 parser.add_argument('--epochs', type=int, default=20, help='number of training epochs')
@@ -48,6 +49,7 @@ batch_size = args.batch_size
 target_size = args.target_size
 learning_rate = args.lr
 data_dir = args.data_dir
+normalize = args.normalize
 test_split_days = args.test_split_days
 num_sample_stocks = args.num_sample_stocks
 input_dataset_name = args.input_dataset_name
@@ -74,18 +76,21 @@ start = time.time()
 # training input data. We exclude the predicted test days for training
 input_dataloader = DatasetLoader(data_dir, input_dataset_name)
 train_data, _, _, _ = input_dataloader.get_data(limit_days=limit_days+test_split_days,
-                                            exclude_days=test_split_days,
-                                            as_numpy=True)
+                                                exclude_days=test_split_days,
+                                                as_numpy=True,
+                                                normalize=normalize)
 
 # training target labels (should not have test days)
 target_dataloader = DatasetLoader(data_dir, target_dataset_name)
 train_labels, _, _, _ = target_dataloader.get_data(limit_days=limit_days,
-                                            as_numpy=True)
+                                                   as_numpy=True,
+                                                   normalize=normalize)
 
 # test input data. Does not have corresponding labels
 test_dataloader = DatasetLoader(data_dir, input_dataset_name)
 test_data_df, _, _, _ = test_dataloader.get_data(limit_days=test_split_days,
-                                              as_numpy=False)
+                                                 as_numpy=False,
+                                                 normalize=normalize)
 
 print('train data: {} | batch_size: {}'.format(train_data.shape, batch_size))
 

@@ -12,7 +12,7 @@ class DatasetLoader():
     # can also return plot figure with stock prices over time
     def get_data(self, num_cols_sample=None, limit_days=None, exclude_days=None,
                  test_split_days=0, random_state=1, as_numpy=True, plot=False,
-                 dropna=True, drop_test=False):
+                 dropna=True, drop_test=False, normalize=False):
 
         data_ret = self.data_df
 
@@ -46,6 +46,10 @@ class DatasetLoader():
         # plot stocks timeseries
         train_fig = plot_stocks(train_data) if plot else None
         test_fig = plot_stocks(test_data) if plot and test_split_days > 0 else None
+
+        if normalize:
+            train_data = (train_data - train_data.min()) / (train_data.max() - train_data.min())
+            test_data = (test_data - test_data.min()) / (test_data.max() - test_data.min())
 
         if as_numpy:
             train_data = train_data.to_numpy()
